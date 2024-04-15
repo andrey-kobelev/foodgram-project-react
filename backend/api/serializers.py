@@ -1,5 +1,12 @@
 from django.contrib.auth import get_user_model
 from rest_framework import serializers
+from django.contrib.auth.password_validation import validate_password
+from django.core.validators import validate_email
+
+
+PASSWORD_MISMATCH = (
+    'Пожалуйста, убедитесь, что ваш пароль совпадает!'
+)
 
 
 User = get_user_model()
@@ -52,3 +59,28 @@ class UsersSerializer(serializers.ModelSerializer):
 
     def to_representation(self, users):
         return UsersWithoutPasswordSerializer(users).data
+
+
+class SetPasswordSerializer(serializers.Serializer):
+    new_password = serializers.CharField(
+        required=True, validators=[validate_password]
+    )
+    current_password = serializers.CharField(
+        required=True, validators=[validate_password]
+    )
+
+    def validate(self, data):
+        if data['current_password'] != data['new_password']:
+            raise serializers.ValidationError(
+                PASSWORD_MISMATCH
+            )
+        return data
+
+
+class GetTokenSerializer(serializers.Serializer):
+    password = serializers.CharField(
+        required=True, write_only=True
+    )
+    email = serializers.EmailField(
+        required=True, validators=[validate_email]
+    )

@@ -18,6 +18,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'rest_framework',
+    'rest_framework.authtoken',
     'users.apps.UsersConfig',
     'api.apps.ApiConfig',
 ]
@@ -93,3 +94,20 @@ MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'foodgram_media')
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+REST_FRAMEWORK = {
+    'DEFAULT_PERMISSION_CLASSES': [
+        'rest_framework.permissions.AllowAny',
+    ],
+
+    'DEFAULT_AUTHENTICATION_CLASSES': [
+        'rest_framework.authentication.TokenAuthentication',
+    ],
+    'PAGE_SIZE': 5,
+}
+
+
+# SIMPLE_JWT = {
+#    'ACCESS_TOKEN_LIFETIME': timedelta(days=1),
+#    'AUTH_HEADER_TYPES': ('Bearer',),
+# }
