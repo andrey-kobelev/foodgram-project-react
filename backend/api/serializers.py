@@ -3,6 +3,8 @@ from rest_framework import serializers
 from django.contrib.auth.password_validation import validate_password
 from django.core.validators import validate_email
 
+from subscriptions.models import Subscriptions
+
 
 PASSWORD_MISMATCH = (
     'Пожалуйста, убедитесь, что ваш пароль совпадает!'
@@ -84,3 +86,11 @@ class GetTokenSerializer(serializers.Serializer):
     email = serializers.EmailField(
         required=True, validators=[validate_email]
     )
+
+
+class SubscriptionsSerializer(serializers.ModelSerializer):
+    subscribing = UsersWithoutPasswordSerializer(read_only=True)
+
+    class Meta:
+        model = Subscriptions
+        fields = ('subscribing',)

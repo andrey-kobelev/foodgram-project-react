@@ -11,11 +11,15 @@ from rest_framework.authtoken.models import Token
 from .serializers import (
     UsersSerializer,
     SetPasswordSerializer,
-    GetTokenSerializer
+    GetTokenSerializer,
+    UsersWithoutPasswordSerializer,
+    SubscriptionsSerializer
 )
+from subscriptions.models import Subscriptions
 
 
 INCORRECT_PASSWORD = 'Неверный пароль!'
+
 User = get_user_model()
 
 
@@ -27,13 +31,6 @@ class UsersViewSet(viewsets.ModelViewSet):
     # http_method_names = ('get', 'post', 'patch', 'delete',)
     # filter_backends = (filters.SearchFilter,)
     # search_fields = ('username',)
-
-    # def get_permissions(self):
-    #     if self.action != 'create' or self.action != 'list':
-    #         self.permission_classes = [IsAuthenticated, ]
-    #     else:
-    #         self.permission_classes = [AllowAny, ]
-    #     return super(UsersViewSet, self).get_permissions()
 
     @action(
         methods=['GET'],
@@ -60,6 +57,46 @@ class UsersViewSet(viewsets.ModelViewSet):
         user.set_password(serializer.validated_data['current_password'])
         user.save()
         return Response(status=status.HTTP_204_NO_CONTENT)
+
+    @action(
+        methods=['POST', 'DELETE'],
+        detail=True,
+        url_path='subscribe',
+        permission_classes=(IsAuthenticated,),
+        url_name='subscribe'
+    )
+    def subscribe(self, request, pk=None):
+        user = request.user
+        subscribing_user = get_object_or_404(User, id=pk)
+        if request.method == 'POST':
+            Subscriptions.objects.create(
+                user=user,
+                subscribing=subscribing_user
+            )
+            serializer = UsersSerializer(subscribing_user)
+            return Response(
+                serializer.data, status=status.HTTP_201_CREATED
+            )
+        Subscriptions.objects.get(user=user, subscribing=subscribing_user).delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+    @action(
+        methods=['GET'],
+        detail=False,
+        url_path='subscriptions',
+        permission_classes=(IsAuthenticated,),
+    )
+    def subscriptions(self, request):
+        subscriptions = request.user.subscriber.all()
+        subscriptions = tuple(obj.subscribing for obj in subscriptions)
+        page = self.paginate_queryset(subscriptions)
+        if page is not None:
+            serializer = UsersWithoutPasswordSerializer(page, many=True)
+            return self.get_paginated_response(
+                serializer.data
+            )
+        serializer = UsersWithoutPasswordSerializer(subscriptions, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
 
 @api_view(http_method_names=['POST'])
