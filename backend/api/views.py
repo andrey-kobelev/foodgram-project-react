@@ -12,8 +12,6 @@ from .serializers import (
     UsersSerializer,
     SetPasswordSerializer,
     GetTokenSerializer,
-    UsersWithoutPasswordSerializer,
-    SubscriptionsSerializer
 )
 from subscriptions.models import Subscriptions
 
@@ -25,12 +23,20 @@ User = get_user_model()
 
 class UsersViewSet(viewsets.ModelViewSet):
     queryset = User.objects.all()
-    serializer_class = UsersSerializer
     permission_classes = (AllowAny,)
     pagination_class = PageNumberPagination
+    serializer_class = UsersSerializer
     # http_method_names = ('get', 'post', 'patch', 'delete',)
     # filter_backends = (filters.SearchFilter,)
     # search_fields = ('username',)
+    #
+    # def get_serializer_class(self):
+    #     if self.action == 'list':
+    #         return SubscriptionsReadSerializer
+    #     return UsersSerializer
+
+    # def get_serializer_class(self):
+    #     return UsersSerializer
 
     @action(
         methods=['GET'],
@@ -40,7 +46,7 @@ class UsersViewSet(viewsets.ModelViewSet):
     )
     def get_current_user_info(self, request):
         return Response(
-            UsersSerializer(request.user).data,
+            UsersSerializer(request.user, context={'request': request}).data,
             status=status.HTTP_200_OK
         )
 
@@ -71,9 +77,9 @@ class UsersViewSet(viewsets.ModelViewSet):
         if request.method == 'POST':
             Subscriptions.objects.create(
                 user=user,
-                subscribing=subscribing_user
+                subscribing=subscribing_user,
             )
-            serializer = UsersSerializer(subscribing_user)
+            serializer = UsersSerializer(subscribing_user, context={'request': request})
             return Response(
                 serializer.data, status=status.HTTP_201_CREATED
             )
@@ -87,15 +93,19 @@ class UsersViewSet(viewsets.ModelViewSet):
         permission_classes=(IsAuthenticated,),
     )
     def subscriptions(self, request):
-        subscriptions = request.user.subscriber.all()
-        subscriptions = tuple(obj.subscribing for obj in subscriptions)
+        subscriptions = tuple(
+            obj.subscribing
+            for obj in request.user.subscriber.all()
+        )
         page = self.paginate_queryset(subscriptions)
         if page is not None:
-            serializer = UsersWithoutPasswordSerializer(page, many=True)
+            serializer = UsersSerializer(page, many=True, context={'request': request})
             return self.get_paginated_response(
                 serializer.data
             )
-        serializer = UsersWithoutPasswordSerializer(subscriptions, many=True)
+        serializer = UsersSerializer(
+            subscriptions, many=True, context={'request': request}
+        )
         return Response(serializer.data, status=status.HTTP_200_OK)
 
 

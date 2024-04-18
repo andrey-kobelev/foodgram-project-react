@@ -3,8 +3,6 @@ from rest_framework import serializers
 from django.contrib.auth.password_validation import validate_password
 from django.core.validators import validate_email
 
-from subscriptions.models import Subscriptions
-
 
 PASSWORD_MISMATCH = (
     'Пожалуйста, убедитесь, что ваш пароль совпадает!'
@@ -14,7 +12,8 @@ PASSWORD_MISMATCH = (
 User = get_user_model()
 
 
-class UsersWithoutPasswordSerializer(serializers.ModelSerializer):
+class BaseUsersSerializer(serializers.ModelSerializer):
+
     class Meta:
         model = User
         fields = (
@@ -27,7 +26,22 @@ class UsersWithoutPasswordSerializer(serializers.ModelSerializer):
         read_only_fields = fields
 
 
+class IsSubscribedSerializer(serializers.BaseSerializer):
+    def to_representation(self, instance):
+        request = self.context['request']
+        data = BaseUsersSerializer(instance).data
+        user = request.user
+        data['is_subscribed'] = False
+        if request.method == 'GET' and request.auth is not None:
+            is_subscribed = user.subscriber.all().filter(
+                subscribing=instance
+            ).exists()
+            data['is_subscribed'] = is_subscribed
+        return data
+
+
 class UsersSerializer(serializers.ModelSerializer):
+
     class Meta:
         model = User
         fields = (
@@ -36,7 +50,7 @@ class UsersSerializer(serializers.ModelSerializer):
             'first_name',
             'last_name',
             'id',
-            'password'
+            'password',
         )
         write_only_fields = ('password',)
         read_only_fields = ('id',)
@@ -59,8 +73,11 @@ class UsersSerializer(serializers.ModelSerializer):
         user.save()
         return user
 
-    def to_representation(self, users):
-        return UsersWithoutPasswordSerializer(users).data
+    def to_representation(self, instance):
+        request = self.context['request']
+        return IsSubscribedSerializer(
+            instance, context={'request': request}
+        ).data
 
 
 class SetPasswordSerializer(serializers.Serializer):
@@ -86,11 +103,3 @@ class GetTokenSerializer(serializers.Serializer):
     email = serializers.EmailField(
         required=True, validators=[validate_email]
     )
-
-
-class SubscriptionsSerializer(serializers.ModelSerializer):
-    subscribing = UsersWithoutPasswordSerializer(read_only=True)
-
-    class Meta:
-        model = Subscriptions
-        fields = ('subscribing',)
