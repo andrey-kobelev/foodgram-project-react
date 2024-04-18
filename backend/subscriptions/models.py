@@ -12,5 +12,13 @@ class Subscriptions(models.Model):
         User, on_delete=models.CASCADE, related_name='subscribing'
     )
 
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=['user', 'subscribing'],
+                name='unique_name_subscribing'
+            )
+        ]
+
     def __str__(self):
         return f'{self.user} -> {self.subscribing}'

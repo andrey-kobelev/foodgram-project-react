@@ -32,7 +32,7 @@ class IsSubscribedSerializer(serializers.BaseSerializer):
         data = BaseUsersSerializer(instance).data
         user = request.user
         data['is_subscribed'] = False
-        if request.method == 'GET' and request.auth is not None:
+        if request.auth is not None:
             is_subscribed = user.subscriber.all().filter(
                 subscribing=instance
             ).exists()
@@ -74,10 +74,7 @@ class UsersSerializer(serializers.ModelSerializer):
         return user
 
     def to_representation(self, instance):
-        request = self.context['request']
-        return IsSubscribedSerializer(
-            instance, context={'request': request}
-        ).data
+        return BaseUsersSerializer(instance).data
 
 
 class SetPasswordSerializer(serializers.Serializer):
