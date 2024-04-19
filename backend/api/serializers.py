@@ -79,11 +79,18 @@ class UsersSerializer(serializers.ModelSerializer):
 
 class SetPasswordSerializer(serializers.Serializer):
     new_password = serializers.CharField(
-        required=True, validators=[validate_password]
+        required=True,
+        validators=[validate_password],
+        style={'input_type': 'password'}
     )
     current_password = serializers.CharField(
-        required=True, validators=[validate_password]
+        required=True,
+        validators=[validate_password],
+        style={'input_type': 'password'}
     )
+
+    class Meta:
+        write_only_fields = ('new_password', 'current_password')
 
     def validate(self, data):
         if data['current_password'] != data['new_password']:
