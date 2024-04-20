@@ -27,7 +27,7 @@ class UsersViewSet(viewsets.ModelViewSet):
     queryset = User.objects.all()
     permission_classes = (AllowAny,)
     pagination_class = PageNumberPagination
-    # http_method_names = ('get', 'post', 'patch', 'delete',)
+    http_method_names = ('get', 'post')
     # filter_backends = (filters.SearchFilter,)
     # search_fields = ('username',)
 
