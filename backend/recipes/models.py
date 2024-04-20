@@ -5,13 +5,16 @@ from django.core.validators import MinValueValidator
 from pytils.translit import slugify
 
 from . import constants
-from .baseclasses import BaseWithNameFieldModel
 
 
 User = get_user_model()
 
 
-class Tag(BaseWithNameFieldModel):
+class Tag(models.Model):
+    name = models.CharField(
+        verbose_name='Имя тега',
+        max_length=constants.NAME_MAX_LENGTH
+    )
     color = models.CharField(
         verbose_name='Цвет',
         max_length=constants.COLOR_MAX_LENGTH
@@ -28,12 +31,21 @@ class Tag(BaseWithNameFieldModel):
 
     def save(self, *args, **kwargs):
         if not self.slug:
-            self.slug = slugify(self.name)[:constants.SLUG_MAX_LENGTH]
-
+            self.slug = (
+                slugify(self.name)
+                [:constants.SLUG_MAX_LENGTH]
+            )
         super().save(*args, **kwargs)
 
+    def __str__(self):
+        return self.slug
 
-class Ingredient(BaseWithNameFieldModel):
+
+class Ingredient(models.Model):
+    name = models.CharField(
+        verbose_name='Название ингредиента',
+        max_length=constants.NAME_MAX_LENGTH
+    )
     measurement_unit = models.CharField(
         verbose_name='Единица измерения',
         max_length=constants.MEASUREMENT_UNIT_MAX_LENGTH
@@ -42,12 +54,17 @@ class Ingredient(BaseWithNameFieldModel):
     class Meta:
         verbose_name = 'Ингредиент'
         verbose_name_plural = 'Ингредиенты'
+        ordering = ('name',)
 
     def __str__(self):
         return f'{self.name} {self.measurement_unit}'
 
 
-class Recipe(BaseWithNameFieldModel):
+class Recipe(models.Model):
+    name = models.CharField(
+        verbose_name='Название блюда',
+        max_length=constants.NAME_MAX_LENGTH
+    )
     author = models.ForeignKey(
         to=User,
         verbose_name='Автор рецепта',
@@ -57,7 +74,7 @@ class Recipe(BaseWithNameFieldModel):
         verbose_name='Текст'
     )
     image = models.ImageField(
-        upload_to='recipes/images/',
+        upload_to=constants.RECIPE_IMAGE_UPLOAD_TO,
         verbose_name='Изображение'
     )
     tags = models.ManyToManyField(
@@ -83,7 +100,10 @@ class Recipe(BaseWithNameFieldModel):
         verbose_name = 'Рецепт'
         verbose_name_plural = 'Рецепты'
         default_related_name = 'recipes'
-        ordering = ('pub_date',)
+        ordering = constants.RECIPE_ORDERING
+
+    def __str__(self):
+        return self.name
 
 
 class RecipeIngredientAmount(models.Model):
@@ -98,7 +118,44 @@ class RecipeIngredientAmount(models.Model):
     )
 
     def __str__(self):
-        return (f'{self.recipe.name}: '
-                f'{self.ingredient.name} '
-                f'{self.amount} '
-                f'{self.ingredient.measurement_unit}')
+        return (
+            f'{self.recipe.name}: '
+            f'{self.ingredient.name} '
+            f'{self.amount} '
+            f'{self.ingredient.measurement_unit}'
+        )
+
+
+class BaseUserRecipeModel(models.Model):
+    user = models.ForeignKey(
+        to=User,
+        on_delete=models.CASCADE,
+    )
+    recipe = models.ForeignKey(
+        to=Recipe,
+        on_delete=models.CASCADE
+    )
+
+    class Meta:
+        abstract = True
+        default_related_name = '%(class)s'
+
+
+class Favorite(BaseUserRecipeModel):
+
+    class Meta(BaseUserRecipeModel.Meta):
+        verbose_name = 'Избранное'
+        verbose_name_plural = 'Избранное'
+        ordering = ('user__username',)
+
+
+class ShoppingCart(BaseUserRecipeModel):
+
+    add_date = models.DateField(
+        auto_now_add=True
+    )
+
+    class Meta(BaseUserRecipeModel.Meta):
+        verbose_name = 'Список покупок'
+        verbose_name_plural = 'Список покупок'
+        ordering = ('add_date',)
