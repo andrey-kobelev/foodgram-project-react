@@ -44,7 +44,7 @@ class Tag(models.Model):
 class Ingredient(models.Model):
     name = models.CharField(
         verbose_name='Название ингредиента',
-        max_length=constants.NAME_MAX_LENGTH
+        max_length=constants.NAME_MAX_LENGTH,
     )
     measurement_unit = models.CharField(
         verbose_name='Единица измерения',
@@ -55,6 +55,12 @@ class Ingredient(models.Model):
         verbose_name = 'Ингредиент'
         verbose_name_plural = 'Ингредиенты'
         ordering = ('name',)
+        constraints = [
+            models.UniqueConstraint(
+                fields=['name', 'measurement_unit'],
+                name='unique_name_measurement_unit'
+            )
+        ]
 
     def __str__(self):
         return f'{self.name} {self.measurement_unit}'
@@ -114,7 +120,9 @@ class RecipeIngredientAmount(models.Model):
         to=Ingredient, on_delete=models.CASCADE
     )
     amount = models.PositiveIntegerField(
-        validators=[MinValueValidator(constants.MIN_MINUTE_VALUE),]
+        validators=[MinValueValidator(constants.MIN_MINUTE_VALUE),],
+        blank=True,
+        null=True
     )
 
     def __str__(self):

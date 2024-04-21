@@ -91,6 +91,7 @@ USE_TZ = True
 
 STATIC_URL = '/static/'
 STATIC_ROOT = BASE_DIR / 'foodgram_static'
+INGREDIENTS_DATA_ROOT = BASE_DIR / 'foodgram_static/data'
 
 MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'foodgram_media')
