@@ -107,6 +107,12 @@ class Recipe(models.Model):
         verbose_name_plural = 'Рецепты'
         default_related_name = 'recipes'
         ordering = constants.RECIPE_ORDERING
+        constraints = [
+            models.UniqueConstraint(
+                fields=['name', 'author'],
+                name='unique_name_author'
+            )
+        ]
 
     def __str__(self):
         return self.name
@@ -147,6 +153,12 @@ class BaseUserRecipeModel(models.Model):
     class Meta:
         abstract = True
         default_related_name = '%(class)s'
+        constraints = [
+            models.UniqueConstraint(
+                fields=['user', 'recipe'],
+                name=f'{default_related_name}_unique_user_recipe'
+            )
+        ]
 
 
 class Favorite(BaseUserRecipeModel):
