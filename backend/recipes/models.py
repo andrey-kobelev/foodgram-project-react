@@ -120,10 +120,13 @@ class Recipe(models.Model):
 
 class RecipeIngredientAmount(models.Model):
     recipe = models.ForeignKey(
-        to=Recipe, on_delete=models.CASCADE
+        to=Recipe,
+        on_delete=models.CASCADE,
+        related_name='recipe_ingredients'
     )
     ingredient = models.ForeignKey(
-        to=Ingredient, on_delete=models.CASCADE
+        to=Ingredient,
+        on_delete=models.CASCADE,
     )
     amount = models.PositiveIntegerField(
         validators=[MinValueValidator(constants.MIN_MINUTE_VALUE),],
