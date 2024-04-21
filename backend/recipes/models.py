@@ -90,8 +90,8 @@ class Recipe(models.Model):
 
     ingredients = models.ManyToManyField(
         to=Ingredient,
+        through='RecipeIngredientAmount',
         verbose_name='Ингредиенты',
-        through='RecipeIngredientAmount'
     )
     cooking_time = models.PositiveIntegerField(
         validators=[MinValueValidator(constants.MIN_MINUTE_VALUE),],
@@ -136,7 +136,6 @@ class RecipeIngredientAmount(models.Model):
             f'{self.recipe.name}: '
             f'{self.ingredient.name} '
             f'{self.amount} '
-            f'{self.ingredient.measurement_unit}'
         )
 
 
