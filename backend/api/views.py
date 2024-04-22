@@ -10,11 +10,21 @@ from rest_framework.authtoken.models import Token
 
 from .serializers import (
     UsersSerializer,
+    UsersIsSubscribedSerializer,
     SetPasswordSerializer,
     GetTokenSerializer,
-    IsSubscribedSerializer
+    TagSerializer,
+    IngredientSerializer,
+    RecipeSerializer
 )
 from subscriptions.models import Subscriptions
+from recipes.models import (
+    Tag,
+    Ingredient,
+    Recipe,
+    Favorite,
+    ShoppingCart
+)
 
 
 INCORRECT_PASSWORD = 'Неверный пароль!'
@@ -33,7 +43,7 @@ class UsersViewSet(viewsets.ModelViewSet):
 
     def get_serializer_class(self):
         if self.request.method == 'GET':
-            return IsSubscribedSerializer
+            return UsersIsSubscribedSerializer
         return UsersSerializer
 
     @action(
@@ -44,7 +54,7 @@ class UsersViewSet(viewsets.ModelViewSet):
     )
     def get_current_user_info(self, request):
         return Response(
-            IsSubscribedSerializer(
+            UsersIsSubscribedSerializer(
                 request.user, context={'request': request}
             ).data,
             status=status.HTTP_200_OK
@@ -85,7 +95,7 @@ class UsersViewSet(viewsets.ModelViewSet):
                         name=subscription.subscribing.username
                     )
                 )
-            serializer = IsSubscribedSerializer(
+            serializer = UsersIsSubscribedSerializer(
                 subscribing_user, context={'request': request}
             )
             return Response(
@@ -109,13 +119,13 @@ class UsersViewSet(viewsets.ModelViewSet):
         )
         page = self.paginate_queryset(subscriptions)
         if page is not None:
-            serializer = IsSubscribedSerializer(
+            serializer = UsersIsSubscribedSerializer(
                 page, many=True, context={'request': request}
             )
             return self.get_paginated_response(
                 serializer.data
             )
-        serializer = IsSubscribedSerializer(
+        serializer = UsersIsSubscribedSerializer(
             subscriptions, many=True, context={'request': request}
         )
         return Response(serializer.data, status=status.HTTP_200_OK)
@@ -144,3 +154,21 @@ def token_logout(request):
     return Response(
         status=status.HTTP_204_NO_CONTENT
     )
+
+
+class TagsViewSet(viewsets.ReadOnlyModelViewSet):
+    queryset = Tag.objects.all()
+    serializer_class = TagSerializer
+    permission_classes(AllowAny,)
+
+
+class IngredientsViewSet(viewsets.ReadOnlyModelViewSet):
+    queryset = Ingredient.objects.all()
+    serializer_class = IngredientSerializer
+    permission_classes(AllowAny,)
+
+
+class RecipeViewSet(viewsets.ModelViewSet):
+    queryset = Recipe.objects.all()
+    serializer_class = RecipeSerializer
+    permission_classes(AllowAny,)

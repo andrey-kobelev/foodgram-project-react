@@ -11,7 +11,8 @@ from recipes.models import (
     Ingredient,
     Recipe,
     Favorite,
-    ShoppingCart
+    ShoppingCart,
+    RecipeIngredientAmount
 )
 
 
@@ -36,32 +37,28 @@ class BaseUsersSerializer(serializers.ModelSerializer):
         read_only_fields = fields
 
 
-class IsSubscribedSerializer(serializers.BaseSerializer):
-    def to_representation(self, instance):
-        request = self.context['request']
-        data = BaseUsersSerializer(instance).data
-        user = request.user
-        data['is_subscribed'] = False
-        if request.auth is not None:
-            is_subscribed = user.subscriber.all().filter(
-                subscribing=instance
-            ).exists()
-            data['is_subscribed'] = is_subscribed
-        return data
+class UsersIsSubscribedSerializer(BaseUsersSerializer):
+    is_subscribed = serializers.SerializerMethodField()
 
-
-class UsersSerializer(serializers.ModelSerializer):
-
-    class Meta:
+    class Meta(BaseUsersSerializer.Meta):
         model = User
-        fields = (
-            'username',
-            'email',
-            'first_name',
-            'last_name',
-            'id',
-            'password',
-        )
+        fields = BaseUsersSerializer.Meta.fields + ('is_subscribed',)
+
+    def get_is_subscribed(self, subscribing):
+        request = self.context['request']
+        user = request.user
+        if request.auth is not None:
+            return user.subscriber.all().filter(
+                subscribing=subscribing
+            ).exists()
+        return False
+
+
+class UsersSerializer(BaseUsersSerializer):
+
+    class Meta(BaseUsersSerializer.Meta):
+        model = User
+        fields = BaseUsersSerializer.Meta.fields + ('password',)
         write_only_fields = ('password',)
         read_only_fields = ('id',)
         extra_kwargs = {
@@ -129,3 +126,62 @@ class Base64ImageField(serializers.ImageField):
 
         return super().to_internal_value(data)
 
+
+class TagSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = Tag
+        fields = '__all__'
+
+
+class IngredientSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = Ingredient
+        fields = '__all__'
+
+
+class IngredientAmountSerializer(serializers.Serializer):
+    id = serializers.IntegerField(source='ingredient__id')
+    name = serializers.CharField(source='ingredient__name')
+    measurement_unit = serializers.CharField(source='ingredient__measurement_unit')
+    amount = serializers.IntegerField()
+
+
+class RecipeSerializer(serializers.ModelSerializer):
+    ingredients = serializers.SerializerMethodField()
+    tags = TagSerializer(many=True)
+    author = UsersIsSubscribedSerializer()
+    is_favorited = serializers.SerializerMethodField()
+    is_in_shopping_cart = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Recipe
+        exclude = ('pub_date',)
+
+    def get_ingredients(self, recipe):
+        return IngredientAmountSerializer(
+            recipe.recipe_ingredients.all().values(
+                'ingredient__id',
+                'ingredient__name',
+                'ingredient__measurement_unit',
+                'amount'
+            ),
+            many=True
+        ).data
+
+    def get_is_favorited(self, recipe):
+        request = self.context['request']
+        if request.auth is not None:
+            return request.user.favorite.filter(
+                recipe=recipe
+            ).exists
+        return False
+
+    def get_is_in_shopping_cart(self, recipe):
+        request = self.context['request']
+        if request.auth is not None:
+            return request.user.shoppingcart.filter(
+                recipe=recipe
+            ).exists
+        return False
