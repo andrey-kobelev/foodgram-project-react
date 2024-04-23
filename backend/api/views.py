@@ -15,7 +15,9 @@ from .serializers import (
     GetTokenSerializer,
     TagSerializer,
     IngredientSerializer,
-    RecipeSerializer
+    RecipeSerializer,
+    SubscriptionsSerializer,
+    RecipeToRepresentationSerializer
 )
 from subscriptions.models import Subscriptions
 from recipes.models import (
@@ -37,7 +39,7 @@ class UsersViewSet(viewsets.ModelViewSet):
     queryset = User.objects.all()
     permission_classes = (AllowAny,)
     pagination_class = PageNumberPagination
-    http_method_names = ('get', 'post')
+    http_method_names = ('get', 'post', 'delete')
     # filter_backends = (filters.SearchFilter,)
     # search_fields = ('username',)
 
@@ -89,20 +91,24 @@ class UsersViewSet(viewsets.ModelViewSet):
                 user=user,
                 subscribing=subscribing_user
             )
+            if user == subscribing_user:
+                raise ValidationError(
+                    'Вы не можете подписаться сами на себя!'
+                )
             if not created:
                 raise ValidationError(
                     SUBSCRIPTION_ERROR.format(
                         name=subscription.subscribing.username
                     )
                 )
-            serializer = UsersIsSubscribedSerializer(
+            serializer = SubscriptionsSerializer(
                 subscribing_user, context={'request': request}
             )
             return Response(
                 serializer.data, status=status.HTTP_201_CREATED
             )
-        Subscriptions.objects.get(
-            user=user, subscribing=subscribing_user
+        get_object_or_404(
+            user.subscriber.all(), subscribing=subscribing_user
         ).delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
 
@@ -119,13 +125,13 @@ class UsersViewSet(viewsets.ModelViewSet):
         )
         page = self.paginate_queryset(subscriptions)
         if page is not None:
-            serializer = UsersIsSubscribedSerializer(
+            serializer = SubscriptionsSerializer(
                 page, many=True, context={'request': request}
             )
             return self.get_paginated_response(
                 serializer.data
             )
-        serializer = UsersIsSubscribedSerializer(
+        serializer = SubscriptionsSerializer(
             subscriptions, many=True, context={'request': request}
         )
         return Response(serializer.data, status=status.HTTP_200_OK)
@@ -170,5 +176,9 @@ class IngredientsViewSet(viewsets.ReadOnlyModelViewSet):
 
 class RecipeViewSet(viewsets.ModelViewSet):
     queryset = Recipe.objects.all()
-    serializer_class = RecipeSerializer
+    serializer_class = RecipeToRepresentationSerializer
     permission_classes(AllowAny,)
+
+    # def perform_create(self, serializer):
+    #     serializer.save(author=self.request.user)
+
