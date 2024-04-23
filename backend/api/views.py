@@ -176,9 +176,8 @@ class IngredientsViewSet(viewsets.ReadOnlyModelViewSet):
 
 class RecipeViewSet(viewsets.ModelViewSet):
     queryset = Recipe.objects.all()
-    serializer_class = RecipeToRepresentationSerializer
+    serializer_class = RecipeSerializer
     permission_classes(AllowAny,)
 
-    # def perform_create(self, serializer):
-    #     serializer.save(author=self.request.user)
-
+    def perform_create(self, serializer):
+        serializer.save(author=self.request.user)

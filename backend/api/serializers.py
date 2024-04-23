@@ -2,6 +2,7 @@ import base64
 
 from django.contrib.auth import get_user_model
 from django.core.files.base import ContentFile
+from django.shortcuts import get_object_or_404
 from rest_framework import serializers
 from django.contrib.auth.password_validation import validate_password
 from django.core.validators import validate_email
@@ -178,7 +179,7 @@ class RecipeToRepresentationSerializer(serializers.ModelSerializer):
         if request.auth is not None:
             return request.user.favorite.filter(
                 recipe=recipe
-            ).exists
+            ).exists()
         return False
 
     def get_is_in_shopping_cart(self, recipe):
@@ -186,7 +187,7 @@ class RecipeToRepresentationSerializer(serializers.ModelSerializer):
         if request.auth is not None:
             return request.user.shoppingcart.filter(
                 recipe=recipe
-            ).exists
+            ).exists()
         return False
 
 
@@ -218,11 +219,10 @@ class RecipeSerializer(serializers.ModelSerializer):
             tags_list.append(tag)
         recipe = Recipe.objects.create(**validated_data)
         recipe.tags.set(tags_list)
-        recipe.save()
         for ingredient_id_amount in ingredients_amount:
             ingredient_id = ingredient_id_amount['id']
             amount = ingredient_id_amount['amount']
-            ingredient = Ingredient.objects.get(id=ingredient_id)
+            ingredient = get_object_or_404(Ingredient, id=ingredient_id)
             RecipeIngredientAmount.objects.create(
                 recipe=recipe,
                 ingredient=ingredient,
@@ -235,19 +235,23 @@ class RecipeSerializer(serializers.ModelSerializer):
         instance.text = validated_data.get('text', instance.text)
         instance.image = validated_data.get('image', instance.image)
         instance.cooking_time = validated_data.get('cooking_time', instance.cooking_time)
-        tags_id = validated_data.pop('tags')
-        tags = []
-        for tag_id in tags_id:
-            tag = Tag.objects.get(id=tag_id)
-            tags.append(tag)
-        instance.tags.set(tags)
-        instance.save()
+        tags = validated_data.pop('tags')
         ingredients_data = validated_data.pop('ingredients')
+        tags_list = []
+        for tag in tags:
+            tags_list.append(tag)
+        instance.tags.set(tags_list)
+        RecipeIngredientAmount.objects.filter(recipe=instance).delete()
         for ingredient_amount in ingredients_data:
-            RecipeIngredientAmount.objects.get_or_create(
+            ingredient_id = ingredient_amount['id']
+            amount = ingredient_amount['amount']
+            ingredient = get_object_or_404(Ingredient, id=ingredient_id)
+            RecipeIngredientAmount.objects.create(
                 recipe=instance,
-                **ingredient_amount
+                ingredient=ingredient,
+                amount=amount
             )
+        instance.save()
         return instance
 
     def to_representation(self, instance):
