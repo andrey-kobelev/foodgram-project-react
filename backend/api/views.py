@@ -17,7 +17,7 @@ from .serializers import (
     IngredientSerializer,
     RecipeSerializer,
     SubscriptionsSerializer,
-    RecipeToRepresentationSerializer
+    UserRecipesSerializer
 )
 from subscriptions.models import Subscriptions
 from recipes.models import (
@@ -31,6 +31,8 @@ from recipes.models import (
 
 INCORRECT_PASSWORD = 'Неверный пароль!'
 SUBSCRIPTION_ERROR = 'Вы уже подписаны на пользователя {name}'
+FAVORITE_ERROR = 'Рецепт {name} уже есть в избранном'
+SHOPPING_CART_ERROR = 'Рецепт {name} уже есть в списке покупок'
 
 User = get_user_model()
 
@@ -181,3 +183,69 @@ class RecipeViewSet(viewsets.ModelViewSet):
 
     def perform_create(self, serializer):
         serializer.save(author=self.request.user)
+
+    @action(
+        methods=['POST', 'DELETE'],
+        detail=True,
+        permission_classes=(AllowAny,),
+        url_path='favorite',
+        url_name='favorite'
+    )
+    def favorite(self, request, pk=None):
+        recipe = get_object_or_404(Recipe, id=pk)
+        user = request.user
+        if request.method == 'POST':
+            favorite, created = Favorite.objects.get_or_create(
+                recipe=recipe,
+                user=user
+            )
+            if not created:
+                raise ValidationError(
+                    FAVORITE_ERROR.format(
+                        name=recipe.name
+                    )
+                )
+            return Response(
+                UserRecipesSerializer(recipe).data,
+                status=status.HTTP_201_CREATED
+            )
+        get_object_or_404(user.favorite.all(), recipe=recipe).delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+    @action(
+        methods=['POST', 'DELETE'],
+        detail=True,
+        permission_classes=(AllowAny,),
+        url_path='shopping_cart',
+        url_name='shopping_cart'
+    )
+    def shopping_cart(self, request, pk=None):
+        recipe = get_object_or_404(Recipe, id=pk)
+        user = request.user
+        if request.method == 'POST':
+            favorite, created = ShoppingCart.objects.get_or_create(
+                recipe=recipe,
+                user=user
+            )
+            if not created:
+                raise ValidationError(
+                    SHOPPING_CART_ERROR.format(
+                        name=recipe.name
+                    )
+                )
+            return Response(
+                UserRecipesSerializer(recipe).data,
+                status=status.HTTP_201_CREATED
+            )
+        get_object_or_404(user.shoppingcart.all(), recipe=recipe).delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+    @action(
+        methods=['GET'],
+        detail=False,
+        permission_classes=(AllowAny,),
+        url_path='download_shopping_cart',
+        url_name='download_shopping_cart'
+    )
+    def download_shopping_cart(self, request):
+        return Response(status=status.HTTP_204_NO_CONTENT)
