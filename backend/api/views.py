@@ -1,4 +1,5 @@
 from django.contrib.auth import get_user_model
+from django.http import HttpResponse
 from django.shortcuts import get_object_or_404
 from rest_framework import viewsets, status
 from rest_framework.decorators import action, api_view, permission_classes
@@ -250,8 +251,10 @@ class RecipeViewSet(viewsets.ModelViewSet):
     def download_shopping_cart(self, request):
         user = request.user
         shopping = dict()
+        recip_names = []
         shopping_cart = user.shoppingcart.select_related('recipe')
         for recipe_from_shopping_cart in shopping_cart:
+            recip_names.append(f'«{recipe_from_shopping_cart.recipe.name}»'.title())
             ingredients = (
                 recipe_from_shopping_cart
                 .recipe.recipe_ingredients
@@ -265,10 +268,17 @@ class RecipeViewSet(viewsets.ModelViewSet):
             for name, measurement_unit, amount in ingredients:
                 ingredient = (name, measurement_unit)
                 if ingredient not in shopping:
-                    shopping[ingredient] = 0
-                shopping[ingredient] += amount
-
+                    shopping[ingredient] = amount
+                else:
+                    shopping[ingredient] += amount
+        shopping_list = ('Список покупок для: \n{recipes}'
+                         '\n_________________________________\n')
         for ingredient, amount in shopping.items():
             name, measurement_unit = ingredient
-            print(f'{name}: {amount} {measurement_unit}')
-        return Response(status=status.HTTP_204_NO_CONTENT)
+            shopping_list += f'{name.lower()}: {amount:,d} {measurement_unit}\n'
+        print(shopping_list.format(recipes='\n'.join(recip_names)))
+        filename = "shoplist.txt"
+        content = shopping_list.format(recipes='\n'.join(recip_names))
+        response = HttpResponse(content, content_type='text/plain')
+        response['Content-Disposition'] = 'attachment; filename={0}'.format(filename)
+        return response
