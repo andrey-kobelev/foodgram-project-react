@@ -254,7 +254,7 @@ class RecipeViewSet(viewsets.ModelViewSet):
         recip_names = []
         shopping_cart = user.shoppingcart.select_related('recipe')
         for recipe_from_shopping_cart in shopping_cart:
-            recip_names.append(f'«{recipe_from_shopping_cart.recipe.name}»'.title())
+            recip_names.append(f' - «{recipe_from_shopping_cart.recipe.name}»'.title())
             ingredients = (
                 recipe_from_shopping_cart
                 .recipe.recipe_ingredients
@@ -271,12 +271,11 @@ class RecipeViewSet(viewsets.ModelViewSet):
                     shopping[ingredient] = amount
                 else:
                     shopping[ingredient] += amount
-        shopping_list = ('Список покупок для: \n{recipes}'
+        shopping_list = ('СПИСОК ПОКУПОК ДЛЯ: \n{recipes}'
                          '\n_________________________________\n')
         for ingredient, amount in shopping.items():
             name, measurement_unit = ingredient
             shopping_list += f'{name.lower()}: {amount:,d} {measurement_unit}\n'
-        print(shopping_list.format(recipes='\n'.join(recip_names)))
         filename = "shoplist.txt"
         content = shopping_list.format(recipes='\n'.join(recip_names))
         response = HttpResponse(content, content_type='text/plain')
