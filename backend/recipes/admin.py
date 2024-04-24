@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from .models import Tag, Ingredient, Recipe, RecipeIngredientAmount
+from .models import Tag, Ingredient, Recipe, RecipeIngredientAmount, ShoppingCart
 
 
 class RecipeIngredientAmountInLine(admin.TabularInline):
@@ -43,3 +43,11 @@ class RecipeAdmin(admin.ModelAdmin):
     list_filter = ('pub_date', 'name')
     empty_value_display = '-пусто-'
 
+
+@admin.register(ShoppingCart)
+class ShoppingCartAdmin(admin.ModelAdmin):
+    list_display = (
+        'user',
+        'recipe'
+    )
+    empty_value_display = '-пусто-'

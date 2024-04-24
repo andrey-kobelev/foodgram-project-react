@@ -223,7 +223,7 @@ class RecipeViewSet(viewsets.ModelViewSet):
         recipe = get_object_or_404(Recipe, id=pk)
         user = request.user
         if request.method == 'POST':
-            favorite, created = ShoppingCart.objects.get_or_create(
+            shopping_obj, created = ShoppingCart.objects.get_or_create(
                 recipe=recipe,
                 user=user
             )
@@ -248,4 +248,27 @@ class RecipeViewSet(viewsets.ModelViewSet):
         url_name='download_shopping_cart'
     )
     def download_shopping_cart(self, request):
+        user = request.user
+        shopping = dict()
+        shopping_cart = user.shoppingcart.select_related('recipe')
+        for recipe_from_shopping_cart in shopping_cart:
+            ingredients = (
+                recipe_from_shopping_cart
+                .recipe.recipe_ingredients
+                .select_related('ingredient')
+                .values_list(
+                    'ingredient__name',
+                    'ingredient__measurement_unit',
+                    'amount'
+                )
+            )
+            for name, measurement_unit, amount in ingredients:
+                ingredient = (name, measurement_unit)
+                if ingredient not in shopping:
+                    shopping[ingredient] = 0
+                shopping[ingredient] += amount
+
+        for ingredient, amount in shopping.items():
+            name, measurement_unit = ingredient
+            print(f'{name}: {amount} {measurement_unit}')
         return Response(status=status.HTTP_204_NO_CONTENT)

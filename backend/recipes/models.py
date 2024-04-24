@@ -134,6 +134,11 @@ class RecipeIngredientAmount(models.Model):
         null=True
     )
 
+    class Meta:
+        verbose_name = 'Ингредиент и количество'
+        verbose_name_plural = 'Ингредиенты и количество'
+        ordering = ('recipe', 'ingredient', 'amount')
+
     def __str__(self):
         return (
             f'{self.ingredient.name} '
@@ -161,6 +166,9 @@ class BaseUserRecipeModel(models.Model):
                 name=f'{default_related_name}_unique_user_recipe'
             )
         ]
+
+    def __str__(self):
+        return self.recipe
 
 
 class Favorite(BaseUserRecipeModel):
