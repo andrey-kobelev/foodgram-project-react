@@ -4,8 +4,8 @@ from django.shortcuts import get_object_or_404
 from rest_framework import viewsets, status
 from rest_framework.decorators import action, api_view, permission_classes
 from rest_framework.exceptions import ValidationError
-from rest_framework.pagination import PageNumberPagination
-from rest_framework.permissions import IsAuthenticated, AllowAny
+from rest_framework.pagination import PageNumberPagination, LimitOffsetPagination
+from rest_framework.permissions import IsAuthenticated, AllowAny, IsAuthenticatedOrReadOnly
 from rest_framework.response import Response
 from rest_framework.authtoken.models import Token
 
@@ -28,6 +28,8 @@ from recipes.models import (
     Favorite,
     ShoppingCart
 )
+from .permissions import AdminUserSafeMethodsOrCreate, AdminAuthorSafeMethods
+from .paginators import UsersPaginator
 
 
 INCORRECT_PASSWORD = 'Неверный пароль!'
@@ -40,9 +42,12 @@ User = get_user_model()
 
 class UsersViewSet(viewsets.ModelViewSet):
     queryset = User.objects.all()
-    permission_classes = (AllowAny,)
-    pagination_class = PageNumberPagination
+    pagination_class = UsersPaginator
     http_method_names = ('get', 'post', 'delete')
+    permission_classes = (
+        IsAuthenticatedOrReadOnly,
+        AdminUserSafeMethodsOrCreate
+    )
     # filter_backends = (filters.SearchFilter,)
     # search_fields = ('username',)
 
@@ -141,6 +146,7 @@ class UsersViewSet(viewsets.ModelViewSet):
 
 
 @api_view(http_method_names=['POST'])
+@permission_classes(AllowAny,)
 def token_login(request):
     serializer = GetTokenSerializer(data=request.data)
     serializer.is_valid(raise_exception=True)
@@ -168,19 +174,23 @@ def token_logout(request):
 class TagsViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = Tag.objects.all()
     serializer_class = TagSerializer
-    permission_classes(AllowAny,)
+    permission_classes = (IsAuthenticated,)
 
 
 class IngredientsViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = Ingredient.objects.all()
     serializer_class = IngredientSerializer
-    permission_classes(AllowAny,)
+    permission_classes = (IsAuthenticated,)
 
 
 class RecipeViewSet(viewsets.ModelViewSet):
     queryset = Recipe.objects.all()
     serializer_class = RecipeSerializer
-    permission_classes(AllowAny,)
+    permission_classes = (
+        IsAuthenticatedOrReadOnly,
+        AdminAuthorSafeMethods
+    )
+    pagination_class = UsersPaginator
 
     def perform_create(self, serializer):
         serializer.save(author=self.request.user)
@@ -188,7 +198,7 @@ class RecipeViewSet(viewsets.ModelViewSet):
     @action(
         methods=['POST', 'DELETE'],
         detail=True,
-        permission_classes=(AllowAny,),
+        permission_classes=(AdminAuthorSafeMethods,),
         url_path='favorite',
         url_name='favorite'
     )
@@ -216,7 +226,7 @@ class RecipeViewSet(viewsets.ModelViewSet):
     @action(
         methods=['POST', 'DELETE'],
         detail=True,
-        permission_classes=(AllowAny,),
+        permission_classes=(AdminAuthorSafeMethods,),
         url_path='shopping_cart',
         url_name='shopping_cart'
     )
@@ -244,7 +254,7 @@ class RecipeViewSet(viewsets.ModelViewSet):
     @action(
         methods=['GET'],
         detail=False,
-        permission_classes=(AllowAny,),
+        permission_classes=(AdminAuthorSafeMethods,),
         url_path='download_shopping_cart',
         url_name='download_shopping_cart'
     )

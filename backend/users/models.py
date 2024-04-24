@@ -3,6 +3,10 @@ from django.contrib.auth.models import AbstractUser
 
 class User(AbstractUser):
 
+    @property
+    def is_admin(self):
+        return self.is_superuser
+
     class Meta:
         ordering = ('email',)
         verbose_name = 'Пользователь'
