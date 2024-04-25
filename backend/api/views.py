@@ -1,7 +1,7 @@
 from django.contrib.auth import get_user_model
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404
-from rest_framework import viewsets, status
+from rest_framework import viewsets, status, filters
 from rest_framework.decorators import action, api_view, permission_classes
 from rest_framework.exceptions import ValidationError
 from rest_framework.pagination import PageNumberPagination, LimitOffsetPagination
@@ -30,6 +30,7 @@ from recipes.models import (
 )
 from .permissions import AdminUserSafeMethodsOrCreate, AdminAuthorSafeMethods
 from .paginators import UsersPaginator
+from .filters import IngredientsSearchFilter
 
 
 INCORRECT_PASSWORD = 'Неверный пароль!'
@@ -129,7 +130,7 @@ class UsersViewSet(viewsets.ModelViewSet):
     def subscriptions(self, request):
         subscriptions = tuple(
             obj.subscribing
-            for obj in request.user.subscriber.all()
+            for obj in request.user.subscriber.select_related('subscribing')
         )
         page = self.paginate_queryset(subscriptions)
         if page is not None:
@@ -146,7 +147,7 @@ class UsersViewSet(viewsets.ModelViewSet):
 
 
 @api_view(http_method_names=['POST'])
-@permission_classes(AllowAny,)
+@permission_classes((AllowAny,))
 def token_login(request):
     serializer = GetTokenSerializer(data=request.data)
     serializer.is_valid(raise_exception=True)
@@ -181,6 +182,9 @@ class IngredientsViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = Ingredient.objects.all()
     serializer_class = IngredientSerializer
     permission_classes = (IsAuthenticated,)
+    pagination_class = None
+    filter_backends = (IngredientsSearchFilter,)
+    search_fields = ('^name',)
 
 
 class RecipeViewSet(viewsets.ModelViewSet):
