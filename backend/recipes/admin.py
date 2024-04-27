@@ -34,20 +34,13 @@ class RecipeAdmin(admin.ModelAdmin):
     list_display = (
         'name',
         'author',
-        'image',
-        'cooking_time',
-        'pub_date'
+        'favorites_counter'
     )
+
+    def favorites_counter(self, instance):
+        return str(instance.favorites_counter())
+
     inlines = (RecipeIngredientAmountInLine,)
     search_fields = ('name',)
-    list_filter = ('pub_date', 'name')
-    empty_value_display = '-пусто-'
-
-
-@admin.register(ShoppingCart)
-class ShoppingCartAdmin(admin.ModelAdmin):
-    list_display = (
-        'user',
-        'recipe'
-    )
+    list_filter = ('author', 'name', 'tags')
     empty_value_display = '-пусто-'

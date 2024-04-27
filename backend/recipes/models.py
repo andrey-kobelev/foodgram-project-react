@@ -28,6 +28,7 @@ class Tag(models.Model):
     class Meta:
         verbose_name = 'Тег'
         verbose_name_plural = 'Теги'
+        ordering = ('name',)
 
     def save(self, *args, **kwargs):
         if not self.slug:
@@ -106,13 +107,16 @@ class Recipe(models.Model):
         verbose_name = 'Рецепт'
         verbose_name_plural = 'Рецепты'
         default_related_name = 'recipes'
-        ordering = constants.RECIPE_ORDERING
+        ordering = ('pub_date',)
         constraints = [
             models.UniqueConstraint(
                 fields=['name', 'author'],
                 name='unique_name_author'
             )
         ]
+
+    def favorites_counter(self):
+        return self.favorite.count()
 
     def __str__(self):
         return self.name

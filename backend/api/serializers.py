@@ -17,8 +17,8 @@ from recipes.models import (
 )
 
 
-PASSWORD_MISMATCH = (
-    'Пожалуйста, убедитесь, что ваш пароль совпадает!'
+BAD_PASSWORD = (
+    'Вы ввели неверный старый пароль'
 )
 
 User = get_user_model()
@@ -62,10 +62,17 @@ class UsersSerializer(BaseUsersSerializer):
         read_only_fields = ('id',)
         extra_kwargs = {
             'username': {'required': True},
-            'email': {'required': True},
+            'email': {
+                'required': True,
+                'validators': [validate_email]
+            },
             'first_name': {'required': True},
             'last_name': {'required': True},
-            'password': {'required': True},
+            'password': {
+                'required': True,
+                'style': {'input_type': 'password'},
+                'validators': [validate_password]
+            },
         }
 
     def create(self, validated_data):
@@ -91,24 +98,26 @@ class SetPasswordSerializer(serializers.Serializer):
     )
     current_password = serializers.CharField(
         required=True,
-        validators=[validate_password],
         style={'input_type': 'password'}
     )
 
     class Meta:
         write_only_fields = ('new_password', 'current_password')
 
-    def validate(self, data):
-        if data['current_password'] != data['new_password']:
+    def validate_current_password(self, password):
+        user = self.context['request'].user
+        if not user.check_password(password):
             raise serializers.ValidationError(
-                PASSWORD_MISMATCH
+                BAD_PASSWORD
             )
-        return data
+        return password
 
 
 class GetTokenSerializer(serializers.Serializer):
     password = serializers.CharField(
-        required=True, write_only=True
+        required=True,
+        write_only=True,
+        style={'input_type': 'password'}
     )
     email = serializers.EmailField(
         required=True, validators=[validate_email]

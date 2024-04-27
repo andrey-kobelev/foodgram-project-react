@@ -22,7 +22,7 @@ INSTALLED_APPS = [
     'users.apps.UsersConfig',
     'subscriptions.apps.SubscriptionsConfig',
     'api.apps.ApiConfig',
-    'recipes.apps.RecipesConfig'
+    'recipes.apps.RecipesConfig',
 ]
 
 MIDDLEWARE = [

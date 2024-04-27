@@ -1,10 +1,9 @@
 from django.contrib.auth import get_user_model
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404
-from rest_framework import viewsets, status, filters
+from rest_framework import viewsets, status
 from rest_framework.decorators import action, api_view, permission_classes
 from rest_framework.exceptions import ValidationError
-from rest_framework.pagination import PageNumberPagination, LimitOffsetPagination
 from rest_framework.permissions import IsAuthenticated, AllowAny, IsAuthenticatedOrReadOnly
 from rest_framework.response import Response
 from rest_framework.authtoken.models import Token
@@ -45,17 +44,19 @@ class UsersViewSet(viewsets.ModelViewSet):
     queryset = User.objects.all()
     pagination_class = UsersPaginator
     http_method_names = ('get', 'post', 'delete')
-    permission_classes = (
-        IsAuthenticatedOrReadOnly,
-        AdminUserSafeMethodsOrCreate
-    )
-    # filter_backends = (filters.SearchFilter,)
-    # search_fields = ('username',)
 
     def get_serializer_class(self):
         if self.request.method == 'GET':
             return UsersIsSubscribedSerializer
         return UsersSerializer
+
+    def get_permissions(self):
+        if self.action == 'create':
+            permission_classes = [AllowAny]
+        else:
+            permission_classes = [IsAuthenticatedOrReadOnly,
+                                  AdminUserSafeMethodsOrCreate]
+        return [permission() for permission in permission_classes]
 
     @action(
         methods=['GET'],
@@ -78,10 +79,12 @@ class UsersViewSet(viewsets.ModelViewSet):
         permission_classes=(IsAuthenticated,)
     )
     def set_password(self, request):
-        serializer = SetPasswordSerializer(data=request.data)
+        serializer = SetPasswordSerializer(
+            data=request.data, context={'request': request}
+        )
         serializer.is_valid(raise_exception=True)
         user = request.user
-        user.set_password(serializer.validated_data['current_password'])
+        user.set_password(serializer.validated_data['new_password'])
         user.save()
         return Response(status=status.HTTP_204_NO_CONTENT)
 
@@ -175,13 +178,13 @@ def token_logout(request):
 class TagsViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = Tag.objects.all()
     serializer_class = TagSerializer
-    permission_classes = (IsAuthenticated,)
+    permission_classes = (AllowAny,)
 
 
 class IngredientsViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = Ingredient.objects.all()
     serializer_class = IngredientSerializer
-    permission_classes = (IsAuthenticated,)
+    permission_classes = (AllowAny,)
     pagination_class = None
     filter_backends = (IngredientsSearchFilter,)
     search_fields = ('^name',)
