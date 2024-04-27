@@ -1,10 +1,10 @@
 from django.urls import include, path
-from rest_framework.routers import SimpleRouter
+from rest_framework.routers import SimpleRouter, DefaultRouter
 
 from .views import (IngredientsViewSet, RecipeViewSet, TagsViewSet,
                     UsersViewSet, token_login, token_logout)
 
-router_v1 = SimpleRouter()
+router_v1 = DefaultRouter()
 
 router_v1.register(
     prefix=r'users',

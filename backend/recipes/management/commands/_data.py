@@ -88,7 +88,8 @@ USERS = [
         'email': 'superuser@yandex.ru',
         'password': 'superuser123',
         'id': SUPERUSER_ID,
-        'is_superuser': True
+        'is_superuser': True,
+        'is_staff': True
     },
 ]
 
@@ -163,8 +164,11 @@ RECIPES = [
 ]
 
 
-DATA_MODEL = (
+TAG_INGREDIENT_DATA_MODEL = (
     (INGREDIENTS, Ingredient),
-    (TAGS, Tag),
+    (TAGS, Tag)
+)
+
+USER_DATA_MODEL = (
     (USERS, User),
 )
