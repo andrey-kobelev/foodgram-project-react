@@ -94,7 +94,7 @@ STATIC_ROOT = BASE_DIR / 'foodgram_static'
 INGREDIENTS_DATA_ROOT = BASE_DIR / 'foodgram_static/data'
 
 MEDIA_URL = '/media/'
-MEDIA_ROOT = os.path.join(BASE_DIR, 'foodgram_media')
+MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 

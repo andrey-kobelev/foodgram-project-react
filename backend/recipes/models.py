@@ -1,11 +1,9 @@
 from django.contrib.auth import get_user_model
-from django.db import models
 from django.core.validators import MinValueValidator
-
+from django.db import models
 from pytils.translit import slugify
 
 from . import constants
-
 
 User = get_user_model()
 

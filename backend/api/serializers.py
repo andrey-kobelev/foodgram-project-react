@@ -1,21 +1,13 @@
 import base64
 
 from django.contrib.auth import get_user_model
+from django.contrib.auth.password_validation import validate_password
 from django.core.files.base import ContentFile
+from django.core.validators import validate_email
 from django.shortcuts import get_object_or_404
 from rest_framework import serializers
-from django.contrib.auth.password_validation import validate_password
-from django.core.validators import validate_email
 
-from recipes.models import (
-    Tag,
-    Ingredient,
-    Recipe,
-    Favorite,
-    ShoppingCart,
-    RecipeIngredientAmount
-)
-
+from recipes.models import Ingredient, Recipe, RecipeIngredientAmount, Tag
 
 BAD_PASSWORD = (
     'Вы ввели неверный старый пароль'
@@ -152,7 +144,9 @@ class IngredientSerializer(serializers.ModelSerializer):
 class IngredientAmountReadSerializer(serializers.Serializer):
     id = serializers.IntegerField(source='ingredient__id')
     name = serializers.CharField(source='ingredient__name')
-    measurement_unit = serializers.CharField(source='ingredient__measurement_unit')
+    measurement_unit = serializers.CharField(
+        source='ingredient__measurement_unit'
+    )
     amount = serializers.IntegerField()
 
 
@@ -243,7 +237,9 @@ class RecipeSerializer(serializers.ModelSerializer):
         instance.name = validated_data.get('name', instance.name)
         instance.text = validated_data.get('text', instance.text)
         instance.image = validated_data.get('image', instance.image)
-        instance.cooking_time = validated_data.get('cooking_time', instance.cooking_time)
+        instance.cooking_time = validated_data.get(
+            'cooking_time', instance.cooking_time
+        )
         tags = validated_data.pop('tags')
         ingredients_data = validated_data.pop('ingredients')
         tags_list = []
@@ -307,4 +303,3 @@ class SubscriptionsSerializer(UsersIsSubscribedSerializer):
             recipes,
             many=True
         ).data
-

@@ -1,36 +1,25 @@
 from django.contrib.auth import get_user_model
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404
-from rest_framework import viewsets, status
+from rest_framework import status, viewsets
+from rest_framework.authtoken.models import Token
 from rest_framework.decorators import action, api_view, permission_classes
 from rest_framework.exceptions import ValidationError
-from rest_framework.permissions import IsAuthenticated, AllowAny, IsAuthenticatedOrReadOnly
+from rest_framework.permissions import (AllowAny, IsAuthenticated,
+                                        IsAuthenticatedOrReadOnly)
 from rest_framework.response import Response
-from rest_framework.authtoken.models import Token
 
-from .serializers import (
-    UsersSerializer,
-    UsersIsSubscribedSerializer,
-    SetPasswordSerializer,
-    GetTokenSerializer,
-    TagSerializer,
-    IngredientSerializer,
-    RecipeSerializer,
-    SubscriptionsSerializer,
-    UserRecipesSerializer
-)
+from recipes.models import Favorite, Ingredient, Recipe, ShoppingCart, Tag
 from subscriptions.models import Subscriptions
-from recipes.models import (
-    Tag,
-    Ingredient,
-    Recipe,
-    Favorite,
-    ShoppingCart
-)
-from .permissions import AdminUserSafeMethodsOrCreate, AdminAuthorSafeMethods
-from .paginators import UsersPaginator
-from .filters import IngredientsSearchFilter
 
+from .filters import IngredientsSearchFilter
+from .paginators import UsersPaginator
+from .permissions import AdminAuthorSafeMethods, AdminUserSafeMethodsOrCreate
+from .serializers import (GetTokenSerializer, IngredientSerializer,
+                          RecipeSerializer, SetPasswordSerializer,
+                          SubscriptionsSerializer, TagSerializer,
+                          UserRecipesSerializer, UsersIsSubscribedSerializer,
+                          UsersSerializer)
 
 INCORRECT_PASSWORD = 'Неверный пароль!'
 SUBSCRIPTION_ERROR = 'Вы уже подписаны на пользователя {name}'
@@ -271,7 +260,9 @@ class RecipeViewSet(viewsets.ModelViewSet):
         recip_names = []
         shopping_cart = user.shoppingcart.select_related('recipe')
         for recipe_from_shopping_cart in shopping_cart:
-            recip_names.append(f' - «{recipe_from_shopping_cart.recipe.name}»'.title())
+            recip_names.append(
+                f' - «{recipe_from_shopping_cart.recipe.name}»'.title()
+            )
             ingredients = (
                 recipe_from_shopping_cart
                 .recipe.recipe_ingredients
@@ -292,9 +283,12 @@ class RecipeViewSet(viewsets.ModelViewSet):
                          '\n_________________________________\n')
         for ingredient, amount in shopping.items():
             name, measurement_unit = ingredient
-            shopping_list += f'{name.lower()}: {amount:,d} {measurement_unit}\n'
+            shopping_list += (f'{name.lower()}: {amount:,d} '
+                              f'{measurement_unit}\n')
         filename = "shoplist.txt"
         content = shopping_list.format(recipes='\n'.join(recip_names))
         response = HttpResponse(content, content_type='text/plain')
-        response['Content-Disposition'] = 'attachment; filename={0}'.format(filename)
+        response['Content-Disposition'] = (
+            'attachment; filename={0}'.format(filename)
+        )
         return response
