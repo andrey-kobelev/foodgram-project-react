@@ -1,5 +1,6 @@
 asgiref==3.8.1
 Django==3.2.16
+django-filter==23.5
 djangorestframework==3.12.4
 flake8==6.0.0
 isort==5.13.2
