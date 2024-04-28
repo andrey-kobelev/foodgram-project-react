@@ -170,7 +170,7 @@ class BaseUserRecipeModel(models.Model):
         ]
 
     def __str__(self):
-        return self.recipe
+        return self.recipe.name
 
 
 class Favorite(BaseUserRecipeModel):

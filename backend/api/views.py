@@ -8,11 +8,12 @@ from rest_framework.exceptions import ValidationError
 from rest_framework.permissions import (AllowAny, IsAuthenticated,
                                         IsAuthenticatedOrReadOnly)
 from rest_framework.response import Response
+from django_filters.rest_framework import DjangoFilterBackend
 
 from recipes.models import Favorite, Ingredient, Recipe, ShoppingCart, Tag
 from subscriptions.models import Subscriptions
 
-from .filters import IngredientsSearchFilter
+from .filters import IngredientsSearchFilter, RecipesFilter
 from .paginators import UsersPaginator
 from .permissions import AdminAuthorSafeMethods, AdminUserSafeMethodsOrCreate
 from .serializers import (GetTokenSerializer, IngredientSerializer,
@@ -187,6 +188,9 @@ class RecipeViewSet(viewsets.ModelViewSet):
         AdminAuthorSafeMethods
     )
     pagination_class = UsersPaginator
+    filter_backends = (DjangoFilterBackend,)
+    filterset_class = RecipesFilter
+    filterset_fields = ('tags', 'author')
 
     def perform_create(self, serializer):
         serializer.save(author=self.request.user)
