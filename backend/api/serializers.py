@@ -296,7 +296,7 @@ class SubscriptionsSerializer(UsersIsSubscribedSerializer):
             self.context['request']
             .query_params.get('recipes_limit', None)
         )
-        if recipes_limit is not None:
+        if recipes_limit is not None and recipes_limit.isdigit():
             recipes_limit = int(recipes_limit)
         recipes = user.recipes.all()[:recipes_limit]
         return UserRecipesSerializer(
