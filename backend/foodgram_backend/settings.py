@@ -4,11 +4,11 @@ from pathlib import Path
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-SECRET_KEY = 'django-insecure-4edl2n6ja1k5rjn0g&5()#$l-ay23vivf*xf3v_g(+x2koecu^'
+SECRET_KEY = os.getenv('SECRET_KEY', 'error-secret-key')
 
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = str(os.getenv('ALLOWED_HOSTS')).split(',')
 
 INSTALLED_APPS = [
     'django.contrib.admin',
@@ -56,12 +56,26 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'foodgram_backend.wsgi.application'
 
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
-    }
+POSTGRESQL = {
+    'ENGINE': 'django.db.backends.postgresql',
+    'NAME': os.getenv('POSTGRES_DB', 'django'),
+    'USER': os.getenv('POSTGRES_USER', 'django'),
+    'PASSWORD': os.getenv('POSTGRES_PASSWORD', ''),
+    'HOST': os.getenv('DB_HOST', ''),
+    'PORT': os.getenv('DB_PORT', 5432)
 }
+
+SQLITE = {
+    'ENGINE': 'django.db.backends.sqlite3',
+    'NAME': BASE_DIR / 'db.sqlite3',
+}
+
+DATABASES = dict()
+
+if os.getenv('SQLITE', 'False') != 'True':
+    DATABASES['default'] = POSTGRESQL
+else:
+    DATABASES['default'] = SQLITE
 
 AUTH_USER_MODEL = 'users.User'
 
@@ -82,7 +96,7 @@ AUTH_PASSWORD_VALIDATORS = [
 
 LANGUAGE_CODE = 'ru'
 
-TIME_ZONE = 'UTC'
+TIME_ZONE = 'Europe/Moscow'
 
 USE_I18N = True
 
