@@ -14,8 +14,10 @@ services:
   backend:
     image: andreykobe/foodgram_backend
     env_file: .env
+    depends_on:
+      - db
     volumes:
-      - media:/media
+      - media:/app/media
       - static:/backend_static
   frontend:
     image: andreykobe/foodgram_frontend
