@@ -12,19 +12,19 @@ services:
     volumes:
       - pg_data:/var/lib/postgresql/data
   backend:
-    build: ./backend/
+    image: andreykobe/foodgram_backend
     env_file: .env
     volumes:
       - media:/media
       - static:/backend_static
   frontend:
-    build: ./frontend/
+    image: andreykobe/foodgram_frontend
     env_file: .env
     command: cp -r /app/build/. /frontend_static/
     volumes:
       - static:/frontend_static
   gateway:
-    build: gateway/
+    image: andreykobe/foodgram_gateway
     env_file: .env
     ports:
       - 9080:80
