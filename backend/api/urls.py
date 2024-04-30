@@ -26,7 +26,6 @@ router_v1.register(
     viewset=RecipeViewSet,
     basename='recipes'
 )
-
 auth_urls = ([
     path('login/', token_login, name='token_login'),
     path('logout/', token_logout, name='token_logout'),
