@@ -6,7 +6,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 SECRET_KEY = os.getenv('SECRET_KEY', 'error-secret-key')
 
-DEBUG = True
+DEBUG = os.getenv('DEBUG_VALUE') == 'True'
 
 ALLOWED_HOSTS = str(os.getenv('ALLOWED_HOSTS')).split(',')
 
@@ -105,8 +105,8 @@ USE_L10N = True
 USE_TZ = True
 
 STATIC_URL = '/static/'
-STATIC_ROOT = BASE_DIR / 'foodgram_static'
-INGREDIENTS_DATA_ROOT = BASE_DIR / 'foodgram_static/data'
+STATIC_ROOT = BASE_DIR / 'collected_static'
+INGREDIENTS_DATA_ROOT = BASE_DIR / 'data'
 
 MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
