@@ -15,7 +15,7 @@ from subscriptions.models import Subscriptions
 
 from .filters import IngredientsSearchFilter, RecipesFilter
 from .paginators import UsersPaginator
-from .permissions import AdminAuthorSafeMethods, AdminUserSafeMethodsOrCreate
+from .permissions import AdminAuthorSafeMethods, AdminUserSafeMethods
 from .serializers import (GetTokenSerializer, IngredientSerializer,
                           RecipeSerializer, SetPasswordSerializer,
                           SubscriptionsSerializer, TagSerializer,
@@ -41,11 +41,11 @@ class UsersViewSet(viewsets.ModelViewSet):
         return UsersSerializer
 
     def get_permissions(self):
-        if self.action == 'create':
+        if self.action == 'create' or self.action == 'retrieve':
             permission_classes = [AllowAny]
         else:
             permission_classes = [IsAuthenticatedOrReadOnly,
-                                  AdminUserSafeMethodsOrCreate]
+                                  AdminUserSafeMethods]
         return [permission() for permission in permission_classes]
 
     @action(
