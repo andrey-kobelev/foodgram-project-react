@@ -113,9 +113,6 @@ class Recipe(models.Model):
             )
         ]
 
-    def favorites_counter(self):
-        return self.favorite.count()
-
     def __str__(self):
         return self.name
 
