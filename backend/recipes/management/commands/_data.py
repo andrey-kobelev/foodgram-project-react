@@ -7,11 +7,14 @@ from django.conf import settings
 from django.core.files.base import ContentFile
 
 from recipes.models import Ingredient, Tag, User, RecipeIngredientAmount
-from ._imagecode import IMAGE_CODE
 
 INGREDIENTS_JSON_FILE_NAME = 'ingredients.json'
+IMAGE_CODE_FILE_NAME = 'image-code.txt'
 PATH_TO_INGREDIENTS_FILE = os.path.join(
     settings.INGREDIENTS_DATA_ROOT, INGREDIENTS_JSON_FILE_NAME
+)
+PATH_TO_IMAGE_CODE_FILE = os.path.join(
+    settings.INGREDIENTS_DATA_ROOT, IMAGE_CODE_FILE_NAME
 )
 
 USER_ID_ONE = 20
@@ -40,7 +43,15 @@ def load_data():
         return json.load(ingredients_json)
 
 
+def load_image_file():
+    with open(
+        PATH_TO_IMAGE_CODE_FILE, 'r', encoding="utf8"
+    ) as image:
+        return image.read()
+
+
 INGREDIENTS = load_data()
+IMAGE_CODE = load_image_file()
 
 TAGS = [
     {
