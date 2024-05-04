@@ -23,8 +23,6 @@ INSTALLED_APPS = [
     'rest_framework',
     'django_filters',
     'rest_framework.authtoken',
-    'users.apps.UsersConfig',
-    'subscriptions.apps.SubscriptionsConfig',
     'api.apps.ApiConfig',
     'recipes.apps.RecipesConfig',
 ]
@@ -80,7 +78,7 @@ if os.getenv('SQLITE', 'False') != 'True':
 else:
     DATABASES['default'] = SQLITE
 
-AUTH_USER_MODEL = 'users.User'
+AUTH_USER_MODEL = 'recipes.User'
 
 AUTH_PASSWORD_VALIDATORS = [
     {
@@ -125,3 +123,11 @@ REST_FRAMEWORK = {
         'rest_framework.authentication.TokenAuthentication',
     ],
 }
+
+EMAIL_MAX_LENGTH = 254
+USERNAME_MAX_LENGTH = 150
+FIRST_NAME_MAX_LENGTH = 150
+LAST_NAME_MAX_LENGTH = 150
+PASSWORD_MAX_LENGTH = 150
+
+USERNAME_PATTERN = r'[\w.@+-]'

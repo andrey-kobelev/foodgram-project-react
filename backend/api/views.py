@@ -10,8 +10,7 @@ from rest_framework.permissions import (AllowAny, IsAuthenticated,
 from rest_framework.response import Response
 from django_filters.rest_framework import DjangoFilterBackend
 
-from recipes.models import Favorite, Ingredient, Recipe, ShoppingCart, Tag
-from subscriptions.models import Subscriptions
+from recipes.models import Favorite, Ingredient, Recipe, ShoppingCart, Tag, Subscriptions
 
 from .filters import IngredientsSearchFilter, RecipesFilter
 from .paginators import UsersPaginator
@@ -87,30 +86,30 @@ class UsersViewSet(viewsets.ModelViewSet):
     )
     def subscribe(self, request, pk=None):
         user = request.user
-        subscribing_user = get_object_or_404(User, id=pk)
+        author = get_object_or_404(User, id=pk)
         if request.method == 'POST':
             subscription, created = Subscriptions.objects.get_or_create(
                 user=user,
-                subscribing=subscribing_user
+                author=author
             )
-            if user == subscribing_user:
+            if user == author:
                 raise ValidationError(
                     'Вы не можете подписаться сами на себя!'
                 )
             if not created:
                 raise ValidationError(
                     SUBSCRIPTION_ERROR.format(
-                        name=subscription.subscribing.username
+                        name=subscription.author.username
                     )
                 )
             serializer = SubscriptionsSerializer(
-                subscribing_user, context={'request': request}
+                author, context={'request': request}
             )
             return Response(
                 serializer.data, status=status.HTTP_201_CREATED
             )
         get_object_or_404(
-            user.subscriber.all(), subscribing=subscribing_user
+            user.subscribers.all(), author=author
         ).delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
 
@@ -122,8 +121,8 @@ class UsersViewSet(viewsets.ModelViewSet):
     )
     def subscriptions(self, request):
         subscriptions = tuple(
-            obj.subscribing
-            for obj in request.user.subscriber.select_related('subscribing')
+            obj.author
+            for obj in request.user.subscribers.select_related('author')
         )
         page = self.paginate_queryset(subscriptions)
         if page is not None:

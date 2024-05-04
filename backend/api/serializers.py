@@ -36,12 +36,12 @@ class UsersIsSubscribedSerializer(BaseUsersSerializer):
     class Meta(BaseUsersSerializer.Meta):
         fields = BaseUsersSerializer.Meta.fields + ('is_subscribed',)
 
-    def get_is_subscribed(self, subscribing):
+    def get_is_subscribed(self, author):
         request = self.context['request']
         user = request.user
         if request.auth is not None:
-            return user.subscriber.all().filter(
-                subscribing=subscribing
+            return user.subscribers.all().filter(
+                author=author
             ).exists()
         return False
 
