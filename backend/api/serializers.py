@@ -1,24 +1,21 @@
 import base64
 
 from django.contrib.auth import get_user_model
-from django.contrib.auth.password_validation import validate_password
 from django.core.files.base import ContentFile
-from django.core.validators import validate_email
 from django.shortcuts import get_object_or_404
 from rest_framework import serializers
 
+from djoser.serializers import UserSerializer, UserCreateSerializer
+
 from recipes.models import Ingredient, Recipe, RecipeIngredientAmount, Tag
 
-BAD_PASSWORD = (
-    'Вы ввели неверный старый пароль'
-)
 
 User = get_user_model()
 
 
-class BaseUsersSerializer(serializers.ModelSerializer):
+class BaseUsersSerializer(UserSerializer):
 
-    class Meta:
+    class Meta(UserSerializer.Meta):
         model = User
         fields = (
             'username',
@@ -27,14 +24,14 @@ class BaseUsersSerializer(serializers.ModelSerializer):
             'last_name',
             'id',
         )
-        read_only_fields = fields
 
 
 class UsersIsSubscribedSerializer(BaseUsersSerializer):
     is_subscribed = serializers.SerializerMethodField()
 
     class Meta(BaseUsersSerializer.Meta):
-        fields = BaseUsersSerializer.Meta.fields + ('is_subscribed',)
+        model = User
+        fields = (*BaseUsersSerializer.Meta.fields, 'is_subscribed',)
 
     def get_is_subscribed(self, author):
         request = self.context['request']
@@ -46,74 +43,12 @@ class UsersIsSubscribedSerializer(BaseUsersSerializer):
         return False
 
 
-class UsersSerializer(BaseUsersSerializer):
-
-    class Meta(BaseUsersSerializer.Meta):
-        fields = BaseUsersSerializer.Meta.fields + ('password',)
-        write_only_fields = ('password',)
-        read_only_fields = ('id',)
-        extra_kwargs = {
-            'username': {'required': True},
-            'email': {
-                'required': True,
-                'validators': [validate_email]
-            },
-            'first_name': {'required': True},
-            'last_name': {'required': True},
-            'password': {
-                'required': True,
-                'style': {'input_type': 'password'},
-                'validators': [validate_password]
-            },
-        }
-
-    def create(self, validated_data):
-        user = User.objects.create(
-            username=validated_data['username'],
-            email=validated_data['email'],
-            first_name=validated_data['first_name'],
-            last_name=validated_data['last_name']
-        )
-        user.set_password(validated_data['password'])
-        user.save()
-        return user
+class UsersSerializer(UserCreateSerializer):
+    class Meta(UserCreateSerializer.Meta):
+        model = User
 
     def to_representation(self, instance):
         return BaseUsersSerializer(instance).data
-
-
-class SetPasswordSerializer(serializers.Serializer):
-    new_password = serializers.CharField(
-        required=True,
-        validators=[validate_password],
-        style={'input_type': 'password'}
-    )
-    current_password = serializers.CharField(
-        required=True,
-        style={'input_type': 'password'}
-    )
-
-    class Meta:
-        write_only_fields = ('new_password', 'current_password')
-
-    def validate_current_password(self, password):
-        user = self.context['request'].user
-        if not user.check_password(password):
-            raise serializers.ValidationError(
-                BAD_PASSWORD
-            )
-        return password
-
-
-class GetTokenSerializer(serializers.Serializer):
-    password = serializers.CharField(
-        required=True,
-        write_only=True,
-        style={'input_type': 'password'}
-    )
-    email = serializers.EmailField(
-        required=True, validators=[validate_email]
-    )
 
 
 class Base64ImageField(serializers.ImageField):

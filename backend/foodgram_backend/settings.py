@@ -23,6 +23,7 @@ INSTALLED_APPS = [
     'rest_framework',
     'django_filters',
     'rest_framework.authtoken',
+    'djoser',
     'api.apps.ApiConfig',
     'recipes.apps.RecipesConfig',
 ]
@@ -122,6 +123,14 @@ REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': [
         'rest_framework.authentication.TokenAuthentication',
     ],
+}
+
+DJOSER = {
+    'SERIALIZERS': {
+        'user_create': 'api.serializers.UsersSerializer',
+        'current_user': 'api.serializers.UsersIsSubscribedSerializer',
+        'user': 'api.serializers.UsersIsSubscribedSerializer',
+    },
 }
 
 EMAIL_MAX_LENGTH = 254

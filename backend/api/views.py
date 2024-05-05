@@ -2,24 +2,23 @@ from django.contrib.auth import get_user_model
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404
 from rest_framework import status, viewsets
-from rest_framework.authtoken.models import Token
-from rest_framework.decorators import action, api_view, permission_classes
+from rest_framework.decorators import action
 from rest_framework.exceptions import ValidationError
 from rest_framework.permissions import (AllowAny, IsAuthenticated,
                                         IsAuthenticatedOrReadOnly)
 from rest_framework.response import Response
 from django_filters.rest_framework import DjangoFilterBackend
+from djoser.views import UserViewSet
 
-from recipes.models import Favorite, Ingredient, Recipe, ShoppingCart, Tag, Subscriptions
-
+from recipes.models import (Favorite, Ingredient,
+                            Recipe, ShoppingCart, Tag, Subscriptions)
 from .filters import IngredientsSearchFilter, RecipesFilter
 from .paginators import UsersPaginator
-from .permissions import AdminAuthorSafeMethods, AdminUserSafeMethods
-from .serializers import (GetTokenSerializer, IngredientSerializer,
-                          RecipeSerializer, SetPasswordSerializer,
+from .permissions import AdminAuthorSafeMethods
+from .serializers import (IngredientSerializer,
+                          RecipeSerializer,
                           SubscriptionsSerializer, TagSerializer,
-                          UserRecipesSerializer, UsersIsSubscribedSerializer,
-                          UsersSerializer)
+                          UserRecipesSerializer, UsersIsSubscribedSerializer, )
 
 INCORRECT_PASSWORD = 'Неверный пароль!'
 SUBSCRIPTION_ERROR = 'Вы уже подписаны на пользователя {name}'
@@ -29,53 +28,22 @@ SHOPPING_CART_ERROR = 'Рецепт {name} уже есть в списке по�
 User = get_user_model()
 
 
-class UsersViewSet(viewsets.ModelViewSet):
+class UsersViewSet(UserViewSet):
     queryset = User.objects.all()
     pagination_class = UsersPaginator
-    http_method_names = ('get', 'post', 'delete')
+    # http_method_names = ('get', 'post', 'delete')
 
-    def get_serializer_class(self):
-        if self.request.method == 'GET':
-            return UsersIsSubscribedSerializer
-        return UsersSerializer
+    def get_queryset(self):
+        return User.objects.all()
 
     def get_permissions(self):
-        if self.action == 'create' or self.action == 'retrieve':
-            permission_classes = [AllowAny]
-        else:
-            permission_classes = [IsAuthenticatedOrReadOnly,
-                                  AdminUserSafeMethods]
-        return [permission() for permission in permission_classes]
-
-    @action(
-        methods=['GET'],
-        detail=False,
-        url_path='me',
-        permission_classes=(IsAuthenticated,)
-    )
-    def get_current_user_info(self, request):
-        return Response(
-            UsersIsSubscribedSerializer(
-                request.user, context={'request': request}
-            ).data,
-            status=status.HTTP_200_OK
-        )
-
-    @action(
-        methods=['POST'],
-        detail=False,
-        url_path='set_password',
-        permission_classes=(IsAuthenticated,)
-    )
-    def set_password(self, request):
-        serializer = SetPasswordSerializer(
-            data=request.data, context={'request': request}
-        )
-        serializer.is_valid(raise_exception=True)
-        user = request.user
-        user.set_password(serializer.validated_data['new_password'])
-        user.save()
-        return Response(status=status.HTTP_204_NO_CONTENT)
+        if (
+            self.action == 'create'
+            or self.action == 'retrieve'
+            or self.action == 'list'
+        ):
+            return (AllowAny(),)
+        return super().get_permissions()
 
     @action(
         methods=['POST', 'DELETE'],
@@ -87,15 +55,15 @@ class UsersViewSet(viewsets.ModelViewSet):
     def subscribe(self, request, pk=None):
         user = request.user
         author = get_object_or_404(User, id=pk)
+        if user == author:
+            raise ValidationError(
+                'Вы не можете подписаться сами на себя!'
+            )
         if request.method == 'POST':
             subscription, created = Subscriptions.objects.get_or_create(
                 user=user,
                 author=author
             )
-            if user == author:
-                raise ValidationError(
-                    'Вы не можете подписаться сами на себя!'
-                )
             if not created:
                 raise ValidationError(
                     SUBSCRIPTION_ERROR.format(
@@ -125,43 +93,12 @@ class UsersViewSet(viewsets.ModelViewSet):
             for obj in request.user.subscribers.select_related('author')
         )
         page = self.paginate_queryset(subscriptions)
-        if page is not None:
-            serializer = SubscriptionsSerializer(
-                page, many=True, context={'request': request}
-            )
-            return self.get_paginated_response(
-                serializer.data
-            )
         serializer = SubscriptionsSerializer(
-            subscriptions, many=True, context={'request': request}
+            page, many=True, context={'request': request}
         )
-        return Response(serializer.data, status=status.HTTP_200_OK)
-
-
-@api_view(http_method_names=['POST'])
-@permission_classes((AllowAny,))
-def token_login(request):
-    serializer = GetTokenSerializer(data=request.data)
-    serializer.is_valid(raise_exception=True)
-    data = serializer.validated_data
-    user = get_object_or_404(User, email=data['email'])
-    if not user.check_password(data['password']):
-        raise ValidationError(INCORRECT_PASSWORD)
-    token, created = Token.objects.get_or_create(user=user)
-    return Response(
-        data={'auth_token': token.key}, status=status.HTTP_200_OK
-    )
-
-
-@api_view(http_method_names=['POST'])
-@permission_classes(permission_classes=[IsAuthenticated])
-def token_logout(request):
-    user = request.user
-    token = Token.objects.get(user=user)
-    token.delete()
-    return Response(
-        status=status.HTTP_204_NO_CONTENT
-    )
+        return self.get_paginated_response(
+            serializer.data
+        )
 
 
 class TagsViewSet(viewsets.ReadOnlyModelViewSet):
