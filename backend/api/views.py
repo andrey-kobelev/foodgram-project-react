@@ -13,7 +13,7 @@ from djoser.views import UserViewSet
 from recipes.models import (Favorite, Ingredient,
                             Recipe, ShoppingCart, Tag, Subscriptions)
 from .filters import IngredientsSearchFilter, RecipesFilter
-from .paginators import UsersPaginator
+from .paginators import LimitPageQueryParamsPaginator
 from .permissions import AdminAuthorSafeMethods
 from .serializers import (IngredientSerializer,
                           RecipeSerializer,
@@ -30,18 +30,13 @@ User = get_user_model()
 
 class UsersViewSet(UserViewSet):
     queryset = User.objects.all()
-    pagination_class = UsersPaginator
-    # http_method_names = ('get', 'post', 'delete')
+    pagination_class = LimitPageQueryParamsPaginator
 
     def get_queryset(self):
         return User.objects.all()
 
     def get_permissions(self):
-        if (
-            self.action == 'create'
-            or self.action == 'retrieve'
-            or self.action == 'list'
-        ):
+        if self.action in ['create', 'retrieve', 'list']:
             return (AllowAny(),)
         return super().get_permissions()
 
@@ -52,9 +47,9 @@ class UsersViewSet(UserViewSet):
         permission_classes=(IsAuthenticated,),
         url_name='subscribe'
     )
-    def subscribe(self, request, pk=None):
+    def subscribe(self, request, id=None):
         user = request.user
-        author = get_object_or_404(User, id=pk)
+        author = get_object_or_404(User, id=id)
         if user == author:
             raise ValidationError(
                 'Вы не можете подписаться сами на себя!'
@@ -123,7 +118,7 @@ class RecipeViewSet(viewsets.ModelViewSet):
         IsAuthenticatedOrReadOnly,
         AdminAuthorSafeMethods
     )
-    pagination_class = UsersPaginator
+    pagination_class = LimitPageQueryParamsPaginator
     filter_backends = (DjangoFilterBackend,)
     filterset_class = RecipesFilter
     filterset_fields = ('tags', 'author')

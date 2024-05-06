@@ -262,6 +262,7 @@ class Favorite(BaseUserRecipeModel):
         verbose_name = 'Избранное'
         verbose_name_plural = 'Избранное'
         ordering = ('user__username',)
+        default_related_name = 'favorites'
 
 
 class ShoppingCart(BaseUserRecipeModel):
