@@ -20,3 +20,7 @@ def username_validator(username):
             )
         )
     return username
+
+
+def hex_color_validator(hex_color):
+    pass

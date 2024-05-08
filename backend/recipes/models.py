@@ -105,11 +105,13 @@ class Subscriptions(models.Model):
 class Tag(models.Model):
     name = models.CharField(
         verbose_name='Имя тега',
-        max_length=constants.NAME_MAX_LENGTH
+        max_length=constants.NAME_MAX_LENGTH,
+        unique=True
     )
     color = models.CharField(
         verbose_name='Цвет',
-        max_length=constants.COLOR_MAX_LENGTH
+        max_length=constants.COLOR_MAX_LENGTH,
+        unique=True
     )
     slug = models.SlugField(
         verbose_name='Слаг',

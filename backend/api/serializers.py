@@ -8,6 +8,15 @@ from drf_extra_fields.fields import Base64ImageField
 from recipes.models import Ingredient, Recipe, RecipeIngredientAmount, Tag
 
 
+SAME_INGREDIENT = (
+    'Нельзя один и тот же ингредиент '
+    '(id={ingredient_id}) добавить дважды!'
+)
+INGREDIENT_NOT_EXISTS = (
+    'Продукт(ы) с id={ingredient_id} не найден(ы)'
+)
+
+
 User = get_user_model()
 
 
@@ -148,6 +157,49 @@ class RecipeSerializer(serializers.ModelSerializer):
         )
         read_only_fields = ('author',)
 
+    def validate_ingredients(self, ingredients):
+        ingredients_ids = [
+            ingredient['id']
+            for ingredient in ingredients
+        ]
+        exists_ingredient_ids = tuple(
+            Ingredient
+            .objects
+            .filter(
+                id__in=set(ingredients_ids)
+            )
+            .values_list('id', flat=True)
+            .order_by('id')
+        )
+        not_exists_ingredient_ids = (
+            set(ingredients_ids)
+            - set(exists_ingredient_ids)
+        )
+        unique_id = []
+        not_unique_id = []
+        for ingredient in ingredients_ids:
+            if ingredient not in unique_id:
+                unique_id.append(ingredient)
+            else:
+                not_unique_id.append(str(ingredient))
+
+        if not_exists_ingredient_ids:
+            raise serializers.ValidationError(
+                INGREDIENT_NOT_EXISTS.format(
+                    ingredient_id=', '.join(
+                        str(id_) for id_ in not_exists_ingredient_ids
+                    )
+                )
+            )
+
+        if not_unique_id:
+            raise serializers.ValidationError(
+                SAME_INGREDIENT.format(
+                    ingredient_id=', '.join(not_unique_id)
+                )
+            )
+        return ingredients
+
     def create(self, validated_data):
         ingredients_amount = validated_data.pop('ingredients')
         tags = validated_data.pop('tags')
@@ -168,13 +220,7 @@ class RecipeSerializer(serializers.ModelSerializer):
     def update(self, instance, validated_data):
         tags = validated_data.pop('tags')
         ingredients_amount = validated_data.pop('ingredients')
-        # instance.name = validated_data.get('name', instance.name)
-        # instance.text = validated_data.get('text', instance.text)
-        # instance.image = validated_data.get('image', instance.image)
-        # instance.cooking_time = validated_data.get(
-        #     'cooking_time', instance.cooking_time
-        # )
-        super().update(instance, validated_data)
+        instance = super().update(instance, validated_data)
         instance.tags.set(tags)
         RecipeIngredientAmount.objects.filter(recipe=instance).delete()
         RecipeIngredientAmount.objects.bulk_create(
@@ -210,7 +256,7 @@ class UserRecipesSerializer(serializers.ModelSerializer):
 
 class SubscriptionsSerializer(UsersIsSubscribedSerializer):
     recipes = serializers.SerializerMethodField()
-    recipes_count = serializers.SerializerMethodField()
+    recipes_count = serializers.IntegerField(source='recipes.count')
 
     class Meta(UsersIsSubscribedSerializer.Meta):
         fields = (
@@ -219,9 +265,6 @@ class SubscriptionsSerializer(UsersIsSubscribedSerializer):
             'recipes_count',
         )
         read_only_fields = fields
-
-    def get_recipes_count(self, user):
-        return user.recipes.count()
 
     def get_recipes(self, user):
         recipes_limit = (

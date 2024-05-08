@@ -4,24 +4,24 @@ from rest_framework.routers import DefaultRouter
 from .views import (IngredientsViewSet, RecipeViewSet, TagsViewSet,
                     UsersViewSet)
 
-router_v1 = DefaultRouter()
+router = DefaultRouter()
 
-router_v1.register(
+router.register(
     prefix=r'users',
     viewset=UsersViewSet,
     basename='users'
 )
-router_v1.register(
+router.register(
     prefix=r'tags',
     viewset=TagsViewSet,
     basename='tags'
 )
-router_v1.register(
+router.register(
     prefix=r'ingredients',
     viewset=IngredientsViewSet,
     basename='ingredients'
 )
-router_v1.register(
+router.register(
     prefix=r'recipes',
     viewset=RecipeViewSet,
     basename='recipes'
@@ -29,5 +29,5 @@ router_v1.register(
 
 urlpatterns = [
     path('auth/', include('djoser.urls.authtoken')),
-    path('', include(router_v1.urls)),
+    path('', include(router.urls)),
 ]
