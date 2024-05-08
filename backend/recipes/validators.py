@@ -7,6 +7,7 @@ BAD_USERNAME = (
     'Неверный формат имени. '
     'Запрещенные символы: {characters}'
 )
+BAD_HEX_COLOR = 'Неверный формат hex color: {hex}. Error: {error}'
 
 
 def username_validator(username):
@@ -23,4 +24,17 @@ def username_validator(username):
 
 
 def hex_color_validator(hex_color):
-    pass
+    try:
+        if (
+            not hex_color.startswith('#')
+            or len(hex_color.split('#')[1]) != settings.HEX_COLOR_LENGTH
+        ):
+            raise ValueError()
+        int(hex_color.split('#')[1], 16)
+        return hex_color
+    except ValueError as error:
+        raise ValidationError(
+            BAD_HEX_COLOR.format(
+                hex=hex_color, error=error
+            )
+        )

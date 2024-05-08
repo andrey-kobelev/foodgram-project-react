@@ -5,7 +5,7 @@ from django.core.validators import MinValueValidator
 from django.db import models
 
 from . import constants
-from .validators import username_validator
+from .validators import username_validator, hex_color_validator
 
 
 class UserManager(BaseUserManager):
@@ -111,7 +111,8 @@ class Tag(models.Model):
     color = models.CharField(
         verbose_name='Цвет',
         max_length=constants.COLOR_MAX_LENGTH,
-        unique=True
+        unique=True,
+        validators=[hex_color_validator, ]
     )
     slug = models.SlugField(
         verbose_name='Слаг',
@@ -214,9 +215,12 @@ class RecipeIngredientAmount(models.Model):
     ingredient = models.ForeignKey(
         to=Ingredient,
         on_delete=models.CASCADE,
+        related_name='ingredient_recipes'
     )
     amount = models.PositiveIntegerField(
-        validators=[MinValueValidator(constants.MIN_MINUTE_VALUE), ],
+        validators=[
+            MinValueValidator(constants.MIN_AMOUNT_VALUE),
+        ],
         blank=True,
         null=True
     )
@@ -250,12 +254,12 @@ class BaseUserRecipeModel(models.Model):
         constraints = [
             models.UniqueConstraint(
                 fields=['user', 'recipe'],
-                name=f'{default_related_name}_unique_user_recipe'
+                name=f'{"%(class)s"}_unique_user_recipe'
             )
         ]
 
     def __str__(self):
-        return self.recipe.name
+        return f'{self.user.username} -> {self.recipe.name}'
 
 
 class Favorite(BaseUserRecipeModel):
