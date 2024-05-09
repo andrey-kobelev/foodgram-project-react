@@ -1,27 +1,25 @@
 from django.contrib.auth import get_user_model
-from django.http import HttpResponse, FileResponse
+from django.http import FileResponse
 from django.shortcuts import get_object_or_404
 from rest_framework import status, viewsets
 from rest_framework.decorators import action
 from rest_framework.exceptions import ValidationError
-from rest_framework.permissions import (AllowAny, IsAuthenticated,
-                                        IsAuthenticatedOrReadOnly)
+from rest_framework.permissions import (
+    AllowAny,
+    IsAuthenticated,
+    IsAuthenticatedOrReadOnly
+)
 from rest_framework.response import Response
 from django_filters.rest_framework import DjangoFilterBackend
 from djoser.views import UserViewSet
-from django.db.models import Sum, F
+from django.db.models import Sum
 
-from recipes.models import (Favorite, Ingredient,
-                            Recipe, ShoppingCart, Tag, Subscriptions,
-                            RecipeIngredientAmount)
+from recipes import models as recipes_models
 from .filters import IngredientsSearchFilter, RecipesFilter
 from . import utils
 from .paginators import LimitPageQueryParamsPaginator
 from .permissions import AdminAuthorSafeMethods
-from .serializers import (IngredientSerializer,
-                          RecipeSerializer,
-                          SubscriptionsSerializer, TagSerializer,
-                          UserRecipesSerializer)
+from . import serializers as api_serializers
 
 SUBSCRIPTION_ERROR = 'Вы уже подписаны на пользователя {name}'
 FAVORITE_ERROR = 'Рецепт {name} уже есть в избранном'
@@ -57,9 +55,10 @@ class UsersViewSet(UserViewSet):
                 'Вы не можете подписаться сами на себя!'
             )
         if request.method == 'POST':
-            subscription, created = Subscriptions.objects.get_or_create(
-                user=user,
-                author=author
+            subscription, created = (
+                recipes_models.Subscriptions
+                .objects
+                .get_or_create(user=user, author=author)
             )
             if not created:
                 raise ValidationError(
@@ -67,7 +66,7 @@ class UsersViewSet(UserViewSet):
                         name=subscription.author.username
                     )
                 )
-            serializer = SubscriptionsSerializer(
+            serializer = api_serializers.SubscriptionsSerializer(
                 author, context={'request': request}
             )
             return Response(
@@ -90,7 +89,7 @@ class UsersViewSet(UserViewSet):
             for obj in request.user.subscribers.select_related('author')
         )
         page = self.paginate_queryset(subscriptions)
-        serializer = SubscriptionsSerializer(
+        serializer = api_serializers.SubscriptionsSerializer(
             page, many=True, context={'request': request}
         )
         return self.get_paginated_response(
@@ -99,14 +98,14 @@ class UsersViewSet(UserViewSet):
 
 
 class TagsViewSet(viewsets.ReadOnlyModelViewSet):
-    queryset = Tag.objects.all()
-    serializer_class = TagSerializer
+    queryset = recipes_models.Tag.objects.all()
+    serializer_class = api_serializers.TagSerializer
     permission_classes = (AllowAny,)
 
 
 class IngredientsViewSet(viewsets.ReadOnlyModelViewSet):
-    queryset = Ingredient.objects.all()
-    serializer_class = IngredientSerializer
+    queryset = recipes_models.Ingredient.objects.all()
+    serializer_class = api_serializers.IngredientSerializer
     permission_classes = (AllowAny,)
     pagination_class = None
     filter_backends = (IngredientsSearchFilter,)
@@ -114,8 +113,8 @@ class IngredientsViewSet(viewsets.ReadOnlyModelViewSet):
 
 
 class RecipeViewSet(viewsets.ModelViewSet):
-    queryset = Recipe.objects.all()
-    serializer_class = RecipeSerializer
+    queryset = recipes_models.Recipe.objects.all()
+    serializer_class = api_serializers.RecipeSerializer
     permission_classes = (
         IsAuthenticatedOrReadOnly,
         AdminAuthorSafeMethods
@@ -136,7 +135,7 @@ class RecipeViewSet(viewsets.ModelViewSet):
             error,
             user_related_objects
     ):
-        recipe = get_object_or_404(Recipe, id=pk)
+        recipe = get_object_or_404(recipes_models.Recipe, id=pk)
         user = request.user
         if request.method == 'POST':
             obj, created = object_.objects.get_or_create(
@@ -150,7 +149,7 @@ class RecipeViewSet(viewsets.ModelViewSet):
                     )
                 )
             return Response(
-                UserRecipesSerializer(recipe).data,
+                api_serializers.UserRecipesSerializer(recipe).data,
                 status=status.HTTP_201_CREATED
             )
         get_object_or_404(user_related_objects, recipe=recipe).delete()
@@ -167,7 +166,7 @@ class RecipeViewSet(viewsets.ModelViewSet):
         return self.shopping_cart_or_favorites(
             pk=pk,
             request=request,
-            object_=Favorite,
+            object_=recipes_models.Favorite,
             error=FAVORITE_ERROR,
             user_related_objects=request.user.favorites.all()
         )
@@ -183,7 +182,7 @@ class RecipeViewSet(viewsets.ModelViewSet):
         return self.shopping_cart_or_favorites(
             pk=pk,
             request=request,
-            object_=ShoppingCart,
+            object_=recipes_models.ShoppingCart,
             error=SHOPPING_CART_ERROR,
             user_related_objects=request.user.shoppingcart.all()
         )
@@ -200,43 +199,13 @@ class RecipeViewSet(viewsets.ModelViewSet):
         ingredients_amount = utils.get_ingredients_amount(
             recipes=recipes_names_ids,
             aggregator_sum=Sum,
-            obj=RecipeIngredientAmount
+            obj=recipes_models.RecipeIngredientAmount
         )
-        for ingredient in ingredients_amount:
-            print(ingredient)
-
-
-        # for recipe_from_shopping_cart in shopping_cart:
-        #     recipes_names.append(
-        #         f' - «{recipe_from_shopping_cart.recipe.name}»'.title()
-        #     )
-        #     ingredients = (
-        #         recipe_from_shopping_cart
-        #         .recipe.recipe_ingredients
-        #         .select_related('ingredient')
-        #         .values_list(
-        #             'ingredient__name',
-        #             'ingredient__measurement_unit',
-        #             'amount'
-        #         )
-        #     )
-        #     for name, measurement_unit, amount in ingredients:
-        #         ingredient = (name, measurement_unit)
-        #         if ingredient not in shopping:
-        #             shopping[ingredient] = amount
-        #         else:
-        #             shopping[ingredient] += amount
-        # shopping_list = ('СПИСОК ПОКУПОК ДЛЯ: \n{recipes}'
-        #                  '\n_________________________________\n')
-        # for ingredient, amount in shopping.items():
-        #     name, measurement_unit = ingredient
-        #     shopping_list += (f'{name.lower()}: {amount:,d} '
-        #                       f'{measurement_unit}\n')
-        # filename = "shoplist.txt"
-        # content = shopping_list.format(recipes='\n'.join(recipes_names))
-        # response = FileResponse(content, content_type='text/plain')
-        # response['Content-Disposition'] = (
-        #     'attachment; filename={0}'.format(filename)
-        # )
-        # return response
-        return Response(status=status.HTTP_204_NO_CONTENT)
+        shopping_list = utils.get_shoppinglist(
+            ingredients=ingredients_amount,
+            recipes=recipes_names_ids
+        )
+        return utils.get_shop_file(
+            response_class=FileResponse,
+            shopping_list=shopping_list
+        )
