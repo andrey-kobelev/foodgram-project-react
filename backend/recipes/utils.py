@@ -1,6 +1,9 @@
 from datetime import datetime
 
 from django.conf import settings
+from django.db.models import Sum
+
+from .models import RecipeIngredientAmount
 
 SHOPPINGLIST = (
     'СПИСОК ПОКУПОК\n'
@@ -22,20 +25,26 @@ def get_recipes_ids_and_names(user):
     )
 
 
-def get_ingredients_amount(recipes, aggregator_sum, obj):
-    return tuple(
-        obj
-        .objects
-        .filter(
-            recipe__in=[
-                recipe_id['recipe__id']
-                for recipe_id in recipes
-            ]
+def get_ingredients_amount(recipes: list) -> list:
+    return [
+        f'{num}. '
+        f'{ingredient["ingredient__name"].capitalize()} '
+        f'{ingredient["amount"]} '
+        f'{ingredient["ingredient__measurement_unit"]}'
+        for num, ingredient in enumerate(
+            tuple(
+                RecipeIngredientAmount
+                .objects
+                .filter(
+                    recipe__in=recipes
+                )
+                .values('ingredient__name', 'ingredient__measurement_unit')
+                .annotate(amount=Sum('amount'))
+                .order_by('ingredient')
+            ),
+            1
         )
-        .values('ingredient__name', 'ingredient__measurement_unit')
-        .annotate(amount=aggregator_sum('amount'))
-        .order_by('ingredient')
-    )
+    ]
 
 
 def get_shoppinglist(ingredients, recipes):
@@ -50,13 +59,7 @@ def get_shoppinglist(ingredients, recipes):
             ])
         ),
         products=(
-            '\n'.join([
-                f'{num}. '
-                f'{ingredient["ingredient__name"].capitalize()} '
-                f'{ingredient["amount"]} '
-                f'{ingredient["ingredient__measurement_unit"]}'
-                for num, ingredient in enumerate(ingredients, 1)
-            ])
+            '\n'.join(ingredients)
         )
     )
 

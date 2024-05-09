@@ -16,7 +16,7 @@ from django.db.models import Sum
 
 from recipes import models as recipes_models
 from .filters import IngredientsSearchFilter, RecipesFilter
-from . import utils
+from recipes import utils
 from .paginators import LimitPageQueryParamsPaginator
 from .permissions import AdminAuthorSafeMethods
 from . import serializers as api_serializers
@@ -197,9 +197,10 @@ class RecipeViewSet(viewsets.ModelViewSet):
     def download_shopping_cart(self, request):
         recipes_names_ids = utils.get_recipes_ids_and_names(user=request.user)
         ingredients_amount = utils.get_ingredients_amount(
-            recipes=recipes_names_ids,
-            aggregator_sum=Sum,
-            obj=recipes_models.RecipeIngredientAmount
+            recipes=[
+                recipe['recipe__id']
+                for recipe in recipes_names_ids
+            ],
         )
         shopping_list = utils.get_shoppinglist(
             ingredients=ingredients_amount,

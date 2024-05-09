@@ -214,10 +214,12 @@ class RecipeIngredientAmount(models.Model):
     )
     ingredient = models.ForeignKey(
         to=Ingredient,
+        verbose_name='Продукт',
         on_delete=models.CASCADE,
         related_name='ingredient_recipes'
     )
     amount = models.PositiveIntegerField(
+        verbose_name='Количество',
         validators=[
             MinValueValidator(constants.MIN_AMOUNT_VALUE),
         ],
