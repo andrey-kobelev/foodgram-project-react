@@ -244,10 +244,12 @@ class BaseUserRecipeModel(models.Model):
     user = models.ForeignKey(
         to=User,
         on_delete=models.CASCADE,
+        verbose_name='Пользователь'
     )
     recipe = models.ForeignKey(
         to=Recipe,
-        on_delete=models.CASCADE
+        on_delete=models.CASCADE,
+        verbose_name='Рецепт'
     )
 
     class Meta:
@@ -276,7 +278,8 @@ class Favorite(BaseUserRecipeModel):
 class ShoppingCart(BaseUserRecipeModel):
 
     add_date = models.DateField(
-        auto_now_add=True
+        auto_now_add=True,
+        verbose_name='Дата добавления'
     )
 
     class Meta(BaseUserRecipeModel.Meta):

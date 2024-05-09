@@ -140,4 +140,6 @@ class ShoppingCartAdmin(admin.ModelAdmin):
         'recipe',
         'add_date'
     )
+    list_filter = ('add_date',)
+    search_fields = ('user__username', 'recipe__name')
     empty_value_display = '-пусто-'
