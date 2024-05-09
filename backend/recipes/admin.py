@@ -1,35 +1,47 @@
 from django.contrib import admin
+from django.contrib.auth.admin import UserAdmin
 from django.contrib.auth import get_user_model
 
-from .models import (Ingredient,
-                     Recipe,
-                     RecipeIngredientAmount,
-                     Tag,
-                     ShoppingCart,
-                     Favorite)
+from . import models
 
 
 User = get_user_model()
 
 
 @admin.register(User)
-class UserAdmin(admin.ModelAdmin):
+class UserAdmin(UserAdmin):
     list_display = (
         'username',
         'email',
         'first_name',
         'last_name',
+        'recipes',
+        'subscriptions',
+        'subscribers'
     )
     search_fields = ('username', 'email',)
     empty_value_display = '-пусто-'
 
+    def recipes(self, user):
+        return user.recipes.count()
+
+    def subscriptions(self, user):
+        return user.subscribers.count()
+
+    def subscribers(self, user):
+        return user.authors.count()
+
+    recipes.short_description = 'Количество рецептов'
+    subscriptions.short_description = 'Количество подписок'
+    subscribers.short_description = 'Количество подписчиков'
+
 
 class RecipeIngredientAmountInLine(admin.TabularInline):
-    model = RecipeIngredientAmount
+    model = models.RecipeIngredientAmount
     extra = 1
 
 
-@admin.register(Tag)
+@admin.register(models.Tag)
 class TagAdmin(admin.ModelAdmin):
     list_display = (
         'name',
@@ -39,7 +51,7 @@ class TagAdmin(admin.ModelAdmin):
     empty_value_display = '-пусто-'
 
 
-@admin.register(Ingredient)
+@admin.register(models.Ingredient)
 class IngredientAdmin(admin.ModelAdmin):
     list_display = (
         'name',
@@ -50,7 +62,7 @@ class IngredientAdmin(admin.ModelAdmin):
     empty_value_display = '-пусто-'
 
 
-@admin.register(Recipe)
+@admin.register(models.Recipe)
 class RecipeAdmin(admin.ModelAdmin):
     readonly_fields = ('favorites',)
     list_display = (
@@ -62,13 +74,13 @@ class RecipeAdmin(admin.ModelAdmin):
     list_filter = ('author', 'name', 'tags')
     empty_value_display = '-пусто-'
 
-    def favorites(self, obj):
-        return str(obj.favorite.count())
+    def favorites(self, recipe):
+        return str(recipe.favorite.count())
 
     favorites.short_description = 'Количество добавлений в избранное'
 
 
-@admin.register(Favorite)
+@admin.register(models.Favorite)
 class FavoriteAdmin(admin.ModelAdmin):
     list_display = (
         'user',
@@ -77,7 +89,7 @@ class FavoriteAdmin(admin.ModelAdmin):
     empty_value_display = '-пусто-'
 
 
-@admin.register(ShoppingCart)
+@admin.register(models.ShoppingCart)
 class ShoppingCartAdmin(admin.ModelAdmin):
     list_display = (
         'user',
