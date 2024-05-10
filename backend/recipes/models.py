@@ -84,13 +84,24 @@ class User(AbstractUser):
 
 class Subscriptions(models.Model):
     user = models.ForeignKey(
-        User, on_delete=models.CASCADE, related_name='subscribers'
+        User, on_delete=models.CASCADE,
+        related_name='subscribers',
+        verbose_name='Пользователь'
     )
     author = models.ForeignKey(
-        User, on_delete=models.CASCADE, related_name='authors'
+        User, on_delete=models.CASCADE,
+        related_name='authors',
+        verbose_name='Подписан на автора'
+    )
+    subscribe_date = models.DateField(
+        verbose_name='Дата подписки',
+        auto_now_add=True,
     )
 
     class Meta:
+        verbose_name = 'Подписки'
+        verbose_name_plural = 'Подписки'
+        ordering = ('subscribe_date',)
         constraints = [
             models.UniqueConstraint(
                 fields=['user', 'author'],

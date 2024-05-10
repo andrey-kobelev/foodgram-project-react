@@ -197,7 +197,7 @@ class RecipeViewSet(viewsets.ModelViewSet):
     def download_shopping_cart(self, request):
         recipes_names_ids = utils.get_recipes_ids_and_names(user=request.user)
         ingredients_amount = utils.get_ingredients_amount(
-            recipes=[
+            recipes_ids=[
                 recipe['recipe__id']
                 for recipe in recipes_names_ids
             ],

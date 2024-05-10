@@ -5,6 +5,9 @@ from django.db.models import Sum
 
 from .models import RecipeIngredientAmount
 
+
+START_NUM = 1
+
 SHOPPINGLIST = (
     'СПИСОК ПОКУПОК\n'
     'Дата составления списка: {date}\n'
@@ -25,7 +28,7 @@ def get_recipes_ids_and_names(user):
     )
 
 
-def get_ingredients_amount(recipes: list) -> list:
+def get_ingredients_amount(recipes_ids: list) -> list:
     return [
         f'{num}. '
         f'{ingredient["ingredient__name"].capitalize()} '
@@ -36,13 +39,13 @@ def get_ingredients_amount(recipes: list) -> list:
                 RecipeIngredientAmount
                 .objects
                 .filter(
-                    recipe__in=recipes
+                    recipe__in=recipes_ids
                 )
                 .values('ingredient__name', 'ingredient__measurement_unit')
                 .annotate(amount=Sum('amount'))
                 .order_by('ingredient')
             ),
-            1
+            START_NUM
         )
     ]
 

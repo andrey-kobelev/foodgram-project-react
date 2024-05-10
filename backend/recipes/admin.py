@@ -118,7 +118,7 @@ class RecipeAdmin(admin.ModelAdmin):
         return mark_safe(
             '{ingredients}'.format(
                 ingredients='<br>'.join(
-                    utils.get_ingredients_amount(recipes=[recipe.id,])
+                    utils.get_ingredients_amount(recipes_ids=[recipe.id, ])
                 )
             )
         )
@@ -142,4 +142,16 @@ class ShoppingCartAdmin(admin.ModelAdmin):
     )
     list_filter = ('add_date',)
     search_fields = ('user__username', 'recipe__name')
+    empty_value_display = '-пусто-'
+
+
+@admin.register(models.Subscriptions)
+class SubscriptionsAdmin(admin.ModelAdmin):
+    list_display = (
+        'user',
+        'author',
+        'subscribe_date'
+    )
+    list_filter = ('subscribe_date',)
+    search_fields = ('user__username', 'author__username')
     empty_value_display = '-пусто-'
