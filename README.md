@@ -1,7 +1,7 @@
 #  Проект «Foodgram - Продуктовый помощник»
 
 ![status](https://github.com/andrey-kobelev/foodgram-project-react/actions/workflows/main.yml/badge.svg)
-
+  
 ## Описание проекта:  
   
 «Фудграм» — сайт, на котором пользователи могут:
@@ -41,21 +41,22 @@ sudo docker compose -f docker-compose.production.yml up -d
 sudo docker compose -f docker-compose.production.yml exec backend python manage.py migrate  
 sudo docker compose -f docker-compose.production.yml exec backend python manage.py collectstatic  
 sudo docker compose -f docker-compose.production.yml exec backend cp -r /app/collect_static/. /static_backend/static/ 
-# После того как миграции пройдут успешно, импортируйте данные в БД введя команду
-sudo docker compose -f docker-compose.production.yml exec backend python manage.py importdata
 ```  
 
 ##### Наполнить БД необходимыми данными (теги, ингредиенты, пользователи и рецепты)
 
 ```bash
-# После того как миграции пройдут успешно, импортируйте данные в БД введя команду
-sudo docker compose -f docker-compose.production.yml exec backend python manage.py importdata
+# После того как миграции пройдут успешно, импортируйте данные в БД введя команды (import-recipes в самом конце!!!):
+	# ..manage.py import-ingredients
+	# ..manage.py import-tags
+	# ..manage.py import-users
+	# ..manage.py import-recipes		
+sudo docker compose -f docker-compose.production.yml exec backend python manage.py import-ingredients
 # После успешного наполнения БД данными вы увидете примерно такое сообщение:
 
-# START!
-# FINISH!
+Начало импорта ингредиентов... (ok)
 
-# База данных наполнена нужными данными. Наслаждайтесь =))
+Импорт ингредиентов выполнен успешно
 ```
 
 ##### Устанавливаем и настраиваем NGINX  
