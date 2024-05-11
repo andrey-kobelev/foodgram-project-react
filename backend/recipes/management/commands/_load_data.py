@@ -9,38 +9,32 @@ from django.core.files.base import ContentFile
 from recipes.models import Ingredient, Tag, User, RecipeIngredientAmount
 
 INGREDIENTS_JSON_FILE_NAME = 'ingredients.json'
+TAGS_JSON_FILE_NAME = 'tags.json'
 IMAGE_CODE_FILE_NAME = 'image-code.txt'
 PATH_TO_INGREDIENTS_FILE = os.path.join(
-    settings.INGREDIENTS_DATA_ROOT, INGREDIENTS_JSON_FILE_NAME
+    settings.DATA_ROOT, INGREDIENTS_JSON_FILE_NAME
+)
+PATH_TO_TAGS_FILE = os.path.join(
+    settings.DATA_ROOT, TAGS_JSON_FILE_NAME
 )
 PATH_TO_IMAGE_CODE_FILE = os.path.join(
-    settings.INGREDIENTS_DATA_ROOT, IMAGE_CODE_FILE_NAME
+    settings.DATA_ROOT, IMAGE_CODE_FILE_NAME
 )
 
 USER_ID_ONE = 20
 USER_ID_TWO = 21
 SUPERUSER_ID = 22
 
-TAG_BREAKFAST_ID = 20
-TAG_LUNCH_ID = 21
-TAG_DINNER_ID = 22
-
-TAG_LIST = [
-    TAG_LUNCH_ID,
-    TAG_DINNER_ID,
-    TAG_BREAKFAST_ID
-]
-
 BURGER_RECIPE_ID = 20
 SANDWICH_RECIPE_ID = 21
 KEBAB_RECIPE_ID = 22
 
 
-def load_data():
+def load_data(path_to):
     with open(
-        PATH_TO_INGREDIENTS_FILE, 'r', encoding="utf8"
-    ) as ingredients_json:
-        return json.load(ingredients_json)
+        path_to, 'r', encoding="utf8"
+    ) as file:
+        return json.load(file)
 
 
 def load_image_file():
@@ -50,29 +44,13 @@ def load_image_file():
         return image.read()
 
 
-INGREDIENTS = load_data()
+INGREDIENTS = load_data(path_to=PATH_TO_INGREDIENTS_FILE)
 IMAGE_CODE = load_image_file()
+TAGS = load_data(path_to=PATH_TO_TAGS_FILE)
 
-TAGS = [
-    {
-        'name': 'Завтрак',
-        'color': '#16f202',
-        'slug': 'breakfast',
-        'id': TAG_BREAKFAST_ID
-    },
-    {
-        'name': 'Обед',
-        'color': '#fcc90f',
-        'slug': 'lunch',
-        'id': TAG_LUNCH_ID
-    },
-    {
-        'name': 'Ужин',
-        'color': '#fc0f1f',
-        'slug': 'dinner',
-        'id': TAG_DINNER_ID
-    },
-
+TAGS_IDS = [
+    tag['id']
+    for tag in TAGS
 ]
 
 USERS = [
@@ -131,18 +109,17 @@ def create_ingredients_tags(recipe):
     k_tags = random.randint(1, 3)
     recipe.tags.set(
         get_tags(
-            *random.choices(TAG_LIST, k=k_tags)
+            *random.choices(TAGS_IDS, k=k_tags)
         )
     )
-    num_range = random.randint(1, 10)
+    num_ingredients = random.randint(3, 10)
     for ingredient in get_ingredients(
-        *[random.randint(1, 40) for _ in range(num_range)]
+        *[random.randint(1, 100) for _ in range(num_ingredients)]
     ):
-        amount = random.randint(3, 20)
         RecipeIngredientAmount.objects.create(
             recipe=recipe,
             ingredient=ingredient,
-            amount=amount
+            amount=random.randint(3, 20)
         )
 
 
@@ -153,7 +130,7 @@ RECIPES = [
         'text': 'The best Burger',
         'image': get_image(),
         'id': BURGER_RECIPE_ID,
-        'cooking_time': 20
+        'cooking_time': 5
     },
     {
         'name': 'Sandwich',
@@ -161,7 +138,7 @@ RECIPES = [
         'text': 'The best Sandwich',
         'image': get_image(),
         'id': SANDWICH_RECIPE_ID,
-        'cooking_time': 20
+        'cooking_time': 11
     },
     {
         'name': 'Kebab',
@@ -169,17 +146,18 @@ RECIPES = [
         'text': 'The best Kebab',
         'image': get_image(),
         'id': KEBAB_RECIPE_ID,
-        'cooking_time': 20
+        'cooking_time': 45
     },
 
 ]
 
 
-TAG_INGREDIENT_DATA_MODEL = (
-    (INGREDIENTS, Ingredient),
+TAGS_DATA_MODEL = (
     (TAGS, Tag)
 )
-
+INGREDIENTS_DATA_MODEL = (
+    (INGREDIENTS, Ingredient),
+)
 USER_DATA_MODEL = (
     (USERS, User),
 )
