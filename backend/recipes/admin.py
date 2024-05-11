@@ -1,13 +1,26 @@
+from django.conf import settings
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
 from django.contrib.auth import get_user_model
 from django.utils.safestring import mark_safe
+from django.contrib.auth.models import Group
 
 from . import models
 from . import utils
+from . import filters
+
+
+HTML_TAG_IMG = (
+    '<img src="{url}" '
+    'width="{width}" '
+    'height="{height}px" />'
+)
 
 
 User = get_user_model()
+
+
+admin.site.unregister(Group)
 
 
 @admin.register(User)
@@ -20,6 +33,10 @@ class UserAdmin(UserAdmin):
         'recipes',
         'subscriptions',
         'subscribers'
+    )
+    list_filter = (
+        *UserAdmin.list_filter,
+        filters.UserSubscriptionsListFilter,
     )
     search_fields = ('username', 'email',)
     empty_value_display = '-пусто-'
@@ -85,7 +102,7 @@ class RecipeAdmin(admin.ModelAdmin):
         'name',
         'author__username',
     )
-    list_filter = ('tags', 'cooking_time', 'pub_date')
+    list_filter = ('tags', 'pub_date', filters.RecipesCookingTimeListFilter)
     filter_horizontal = ('tags',)
     empty_value_display = '-пусто-'
 
@@ -96,10 +113,10 @@ class RecipeAdmin(admin.ModelAdmin):
     @admin.display(description='Изображение')
     def show_image(self, recipe):
         return mark_safe(
-            '<img src="{url}" '
-            'width="150" '
-            'height="150px" />'.format(
+            HTML_TAG_IMG.format(
                 url=recipe.image.url,
+                width=settings.ADMIN_IMAGE_WIDTH,
+                height=settings.ADMIN_IMAGE_HEIGHT
             )
         )
 
@@ -130,6 +147,7 @@ class FavoriteAdmin(admin.ModelAdmin):
         'user',
         'recipe',
     )
+    search_fields = ('user__username', 'recipe__name')
     empty_value_display = '-пусто-'
 
 

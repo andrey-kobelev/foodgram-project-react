@@ -12,7 +12,6 @@ from rest_framework.permissions import (
 from rest_framework.response import Response
 from django_filters.rest_framework import DjangoFilterBackend
 from djoser.views import UserViewSet
-from django.db.models import Sum
 
 from recipes import models as recipes_models
 from .filters import IngredientsSearchFilter, RecipesFilter
