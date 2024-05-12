@@ -1,18 +1,16 @@
 from django.contrib.auth import get_user_model
 from django.shortcuts import get_object_or_404
-from rest_framework import serializers
-from djoser.serializers import UserSerializer, UserCreateSerializer
+from djoser.serializers import UserSerializer
 from drf_extra_fields.fields import Base64ImageField
-
 from recipes.models import Ingredient, Recipe, RecipeIngredientAmount, Tag
+from rest_framework import serializers
 
-
-SAME_INGREDIENT = (
-    'Нельзя один и тот же ингредиент '
-    '(id={ingredient_id}) добавить дважды!'
+SAME_ID = (
+    'Нельзя передавать одинаковые ID: '
+    'id={id}'
 )
-INGREDIENT_NOT_EXISTS = (
-    'Продукт(ы) с id={ingredient_id} не найден(ы)'
+ID_NOT_EXISTS = (
+    'id={id} не найден(ы)'
 )
 
 
@@ -20,6 +18,7 @@ User = get_user_model()
 
 
 class BaseUsersSerializer(UserSerializer):
+    is_subscribed = serializers.SerializerMethodField()
 
     class Meta(UserSerializer.Meta):
         model = User
@@ -29,15 +28,12 @@ class BaseUsersSerializer(UserSerializer):
             'first_name',
             'last_name',
             'id',
+            'is_subscribed'
         )
-
-
-class UsersIsSubscribedSerializer(BaseUsersSerializer):
-    is_subscribed = serializers.SerializerMethodField()
-
-    class Meta(BaseUsersSerializer.Meta):
-        model = User
-        fields = (*BaseUsersSerializer.Meta.fields, 'is_subscribed',)
+        read_only_fields = (
+            *UserSerializer.Meta.read_only_fields,
+            'is_subscribed'
+        )
 
     def get_is_subscribed(self, author):
         request = self.context['request']
@@ -47,14 +43,6 @@ class UsersIsSubscribedSerializer(BaseUsersSerializer):
                 author=author
             ).exists()
         return False
-
-
-class UsersSerializer(UserCreateSerializer):
-    class Meta(UserCreateSerializer.Meta):
-        model = User
-
-    def to_representation(self, instance):
-        return BaseUsersSerializer(instance).data
 
 
 class TagSerializer(serializers.ModelSerializer):
@@ -111,7 +99,7 @@ class RecipeToRepresentationSerializer(serializers.ModelSerializer):
         source='recipe_ingredients'
     )
     tags = TagSerializer(many=True)
-    author = UsersIsSubscribedSerializer()
+    author = BaseUsersSerializer()
     is_favorited = serializers.SerializerMethodField()
     is_in_shopping_cart = serializers.SerializerMethodField()
 
@@ -130,7 +118,7 @@ class RecipeToRepresentationSerializer(serializers.ModelSerializer):
     def get_is_in_shopping_cart(self, recipe):
         request = self.context['request']
         if request.auth is not None:
-            return request.user.shoppingcart.filter(
+            return request.user.shoppingcarts.filter(
                 recipe=recipe
             ).exists()
         return False
@@ -156,45 +144,46 @@ class RecipeSerializer(serializers.ModelSerializer):
         )
         read_only_fields = ('author',)
 
+    def validate_tags(self, tags):
+        print('TAGS')
+        print(tags)
+        print(self.initial_data['tags'])
+        return tags
+
     def validate_ingredients(self, ingredients):
-        ingredients_ids = [
+        ids = [
             ingredient['id']
             for ingredient in ingredients
         ]
-        exists_ingredient_ids = tuple(
-            Ingredient
-            .objects
-            .filter(
-                id__in=set(ingredients_ids)
+        not_exists_ids = list(
+            set(ids) - set(
+                Ingredient.objects.filter(
+                    id__in=set(ids)
+                ).values_list('id', flat=True).order_by('id')
             )
-            .values_list('id', flat=True)
-            .order_by('id')
         )
-        not_exists_ingredient_ids = (
-            set(ingredients_ids)
-            - set(exists_ingredient_ids)
+        not_unique_ids = list(
+            set(
+                [
+                    id_
+                    for id_ in set(ids)
+                    if ids.count(id_) > 1
+                ]
+            )
         )
-        unique_id = []
-        not_unique_id = []
-        for ingredient in ingredients_ids:
-            if ingredient not in unique_id:
-                unique_id.append(ingredient)
-            else:
-                not_unique_id.append(str(ingredient))
 
-        if not_exists_ingredient_ids:
+        if not_exists_ids:
             raise serializers.ValidationError(
-                INGREDIENT_NOT_EXISTS.format(
-                    ingredient_id=', '.join(
-                        str(id_) for id_ in not_exists_ingredient_ids
+                ID_NOT_EXISTS.format(
+                    id=', '.join(
+                        str(id_) for id_ in not_exists_ids
                     )
                 )
             )
-
-        if not_unique_id:
+        if not_unique_ids:
             raise serializers.ValidationError(
-                SAME_INGREDIENT.format(
-                    ingredient_id=', '.join(not_unique_id)
+                SAME_ID.format(
+                    id=''.join(list(str(not_unique_ids)))
                 )
             )
         return ingredients
@@ -253,13 +242,13 @@ class UserRecipesSerializer(serializers.ModelSerializer):
         )
 
 
-class SubscriptionsSerializer(UsersIsSubscribedSerializer):
+class SubscriptionsSerializer(BaseUsersSerializer):
     recipes = serializers.SerializerMethodField()
     recipes_count = serializers.IntegerField(source='recipes.count')
 
-    class Meta(UsersIsSubscribedSerializer.Meta):
+    class Meta(BaseUsersSerializer.Meta):
         fields = (
-            *UsersIsSubscribedSerializer.Meta.fields,
+            *BaseUsersSerializer.Meta.fields,
             'recipes',
             'recipes_count',
         )

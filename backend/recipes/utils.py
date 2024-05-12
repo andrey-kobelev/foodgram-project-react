@@ -22,7 +22,7 @@ SHOPPINGLIST = (
 
 def get_recipes_ids_and_names(user):
     return tuple(
-        user.shoppingcart
+        user.shoppingcarts
         .select_related('recipe')
         .values('recipe__id', 'recipe__name')
     )

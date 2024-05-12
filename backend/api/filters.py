@@ -1,7 +1,11 @@
 from rest_framework.filters import SearchFilter
 from django_filters import rest_framework as filters
+from django.db.models import Q
 
 from recipes.models import Recipe, Tag
+
+
+IS_FAVORITED = 'is_favorited'
 
 
 class IngredientsSearchFilter(SearchFilter):
@@ -15,41 +19,21 @@ class RecipesFilter(filters.FilterSet):
         queryset=Tag.objects.all()
     )
     is_favorited = filters.BooleanFilter(
-        method='favorites'
+        method='get_recipes'
     )
     is_in_shopping_cart = filters.BooleanFilter(
-        method='shopping_cart'
+        method='get_recipes'
     )
 
     class Meta:
         model = Recipe
         fields = ('tags', 'author')
 
-    def get_recipes(self, recipes, request, user_related_objects, value):
-        if request.auth is None or not value:
+    def get_recipes(self, recipes, name, value):
+        if self.request.auth is None or not value:
             return recipes.objects.none()
-        return recipes.objects.filter(
-            id__in=[
-                id_[0] for id_ in (
-                    user_related_objects
-                    .select_related('recipe')
-                    .values_list('recipe__id')
-                )
-            ]
-        )
-
-    def favorites(self, recipes, name, value):
-        return self.get_recipes(
-            recipes=recipes,
-            request=self.request,
-            user_related_objects=self.request.user.favorites,
-            value=value
-        )
-
-    def shopping_cart(self, recipes, name, value):
-        return self.get_recipes(
-            recipes=recipes,
-            request=self.request,
-            user_related_objects=self.request.user.shoppingcart,
-            value=value
-        )
+        user = self.request.user
+        related_filter = Q(shoppingcarts__user=user)
+        if name == IS_FAVORITED:
+            related_filter = Q(favorites__user=user)
+        return recipes.filter(related_filter)

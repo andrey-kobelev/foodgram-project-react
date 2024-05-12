@@ -17,7 +17,7 @@ from recipes import models as recipes_models
 from .filters import IngredientsSearchFilter, RecipesFilter
 from recipes import utils
 from .paginators import LimitPageQueryParamsPaginator
-from .permissions import AdminAuthorSafeMethods
+from .permissions import AuthorSafeMethods
 from . import serializers as api_serializers
 
 SUBSCRIPTION_ERROR = 'Вы уже подписаны на пользователя {name}'
@@ -116,7 +116,7 @@ class RecipeViewSet(viewsets.ModelViewSet):
     serializer_class = api_serializers.RecipeSerializer
     permission_classes = (
         IsAuthenticatedOrReadOnly,
-        AdminAuthorSafeMethods
+        AuthorSafeMethods
     )
     pagination_class = LimitPageQueryParamsPaginator
     filter_backends = (DjangoFilterBackend,)
@@ -157,7 +157,7 @@ class RecipeViewSet(viewsets.ModelViewSet):
     @action(
         methods=['POST', 'DELETE'],
         detail=True,
-        permission_classes=(AdminAuthorSafeMethods,),
+        permission_classes=(AuthorSafeMethods,),
         url_path='favorite',
         url_name='favorite'
     )
@@ -173,7 +173,7 @@ class RecipeViewSet(viewsets.ModelViewSet):
     @action(
         methods=['POST', 'DELETE'],
         detail=True,
-        permission_classes=(AdminAuthorSafeMethods,),
+        permission_classes=(AuthorSafeMethods,),
         url_path='shopping_cart',
         url_name='shopping_cart'
     )
@@ -183,13 +183,13 @@ class RecipeViewSet(viewsets.ModelViewSet):
             request=request,
             object_=recipes_models.ShoppingCart,
             error=SHOPPING_CART_ERROR,
-            user_related_objects=request.user.shoppingcart.all()
+            user_related_objects=request.user.shoppingcarts.all()
         )
 
     @action(
         methods=['GET'],
         detail=False,
-        permission_classes=(AdminAuthorSafeMethods,),
+        permission_classes=(AuthorSafeMethods,),
         url_path='download_shopping_cart',
         url_name='download_shopping_cart'
     )
