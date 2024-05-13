@@ -10,7 +10,7 @@ SAME_ID = (
     'id={id}'
 )
 ID_NOT_EXISTS = (
-    'id={id} не найден(ы)'
+    'Объект(ы) с id = {id} не найден(ы)'
 )
 
 
@@ -144,20 +144,10 @@ class RecipeSerializer(serializers.ModelSerializer):
         )
         read_only_fields = ('author',)
 
-    def validate_tags(self, tags):
-        print('TAGS')
-        print(tags)
-        print(self.initial_data['tags'])
-        return tags
-
-    def validate_ingredients(self, ingredients):
-        ids = [
-            ingredient['id']
-            for ingredient in ingredients
-        ]
+    def unique_exists_validator(self, model, ids):
         not_exists_ids = list(
             set(ids) - set(
-                Ingredient.objects.filter(
+                model.objects.filter(
                     id__in=set(ids)
                 ).values_list('id', flat=True).order_by('id')
             )
@@ -171,21 +161,30 @@ class RecipeSerializer(serializers.ModelSerializer):
                 ]
             )
         )
-
         if not_exists_ids:
             raise serializers.ValidationError(
-                ID_NOT_EXISTS.format(
-                    id=', '.join(
-                        str(id_) for id_ in not_exists_ids
-                    )
-                )
+                ID_NOT_EXISTS.format(id=not_exists_ids)
             )
         if not_unique_ids:
             raise serializers.ValidationError(
-                SAME_ID.format(
-                    id=''.join(list(str(not_unique_ids)))
-                )
+                SAME_ID.format(id=not_unique_ids)
             )
+
+    def validate_tags(self, tags):
+        self.unique_exists_validator(
+            model=Tag,
+            ids=self.initial_data['tags']
+        )
+        return tags
+
+    def validate_ingredients(self, ingredients):
+        self.unique_exists_validator(
+            model=Ingredient,
+            ids=[
+                ingredient['id']
+                for ingredient in ingredients
+            ]
+        )
         return ingredients
 
     def create(self, validated_data):
@@ -208,7 +207,6 @@ class RecipeSerializer(serializers.ModelSerializer):
     def update(self, instance, validated_data):
         tags = validated_data.pop('tags')
         ingredients_amount = validated_data.pop('ingredients')
-        instance = super().update(instance, validated_data)
         instance.tags.set(tags)
         RecipeIngredientAmount.objects.filter(recipe=instance).delete()
         RecipeIngredientAmount.objects.bulk_create(
@@ -221,12 +219,11 @@ class RecipeSerializer(serializers.ModelSerializer):
             )
             for ingredient_id_amount in ingredients_amount
         )
-        instance.save()
-        return instance
+        return super().update(instance, validated_data)
 
     def to_representation(self, instance):
         return RecipeToRepresentationSerializer(
-            instance, context={'request': self.context['request']}
+            instance, context=self.context
         ).data
 
 
