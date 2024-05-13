@@ -8,3 +8,13 @@ class AuthorSafeMethods(permissions.BasePermission):
             request.method in permissions.SAFE_METHODS
             or obj.author == request.user
         )
+
+
+class MePermission(permissions.BasePermission):
+
+    def has_permission(self, request, view):
+        return (
+            request.method == 'GET'
+            and request.user.is_authenticated
+        )
+

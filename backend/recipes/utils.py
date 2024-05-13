@@ -65,16 +65,3 @@ def get_shoppinglist(ingredients, recipes):
             '\n'.join(ingredients)
         )
     )
-
-
-def get_shop_file(response_class, shopping_list):
-    response = response_class(
-        shopping_list,
-        content_type='text/plain'
-    )
-    response['Content-Disposition'] = (
-        'attachment; filename={0}'.format(
-            settings.SHOPPINGLIST_FILE_NAME
-        )
-    )
-    return response

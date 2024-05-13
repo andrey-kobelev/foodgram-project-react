@@ -1,6 +1,8 @@
 from django.contrib.auth import get_user_model
 from django.http import FileResponse
 from django.shortcuts import get_object_or_404
+from django_filters.rest_framework import DjangoFilterBackend
+from djoser.views import UserViewSet
 from rest_framework import status, viewsets
 from rest_framework.decorators import action
 from rest_framework.exceptions import ValidationError
@@ -10,15 +12,13 @@ from rest_framework.permissions import (
     IsAuthenticatedOrReadOnly
 )
 from rest_framework.response import Response
-from django_filters.rest_framework import DjangoFilterBackend
-from djoser.views import UserViewSet
 
-from recipes import models as recipes_models
-from .filters import IngredientsSearchFilter, RecipesFilter
-from recipes import utils
-from .paginators import LimitPageQueryParamsPaginator
-from .permissions import AuthorSafeMethods
 from . import serializers as api_serializers
+from .filters import IngredientsSearchFilter, RecipesFilter
+from .paginators import LimitPageQueryParamsPaginator
+from .permissions import AuthorSafeMethods, MePermission
+from recipes import models as recipes_models
+from recipes import utils
 
 SUBSCRIPTION_ERROR = 'Вы уже подписаны на пользователя {name}'
 FAVORITE_ERROR = 'Рецепт {name} уже есть в избранном'
@@ -31,12 +31,9 @@ class UsersViewSet(UserViewSet):
     queryset = User.objects.all()
     pagination_class = LimitPageQueryParamsPaginator
 
-    def get_queryset(self):
-        return User.objects.all()
-
     def get_permissions(self):
-        if self.action in ['create', 'retrieve', 'list']:
-            return (AllowAny(),)
+        if self.action == 'me':
+            return (MePermission(),)
         return super().get_permissions()
 
     @action(
@@ -55,9 +52,9 @@ class UsersViewSet(UserViewSet):
             )
         if request.method == 'POST':
             subscription, created = (
-                recipes_models.Subscriptions
-                .objects
-                .get_or_create(user=user, author=author)
+                recipes_models.Subscriptions.objects.get_or_create(
+                    user=user, author=author
+                )
             )
             if not created:
                 raise ValidationError(
@@ -84,8 +81,9 @@ class UsersViewSet(UserViewSet):
     )
     def subscriptions(self, request):
         subscriptions = tuple(
-            obj.author
-            for obj in request.user.subscribers.select_related('author')
+            User.objects.filter(
+                subscribers__user=request.user
+            )
         )
         page = self.paginate_queryset(subscriptions)
         serializer = api_serializers.SubscriptionsSerializer(
@@ -201,11 +199,10 @@ class RecipeViewSet(viewsets.ModelViewSet):
                 for recipe in recipes_names_ids
             ],
         )
-        shopping_list = utils.get_shoppinglist(
-            ingredients=ingredients_amount,
-            recipes=recipes_names_ids
-        )
-        return utils.get_shop_file(
-            response_class=FileResponse,
-            shopping_list=shopping_list
+        return FileResponse(
+            utils.get_shoppinglist(
+                ingredients=ingredients_amount,
+                recipes=recipes_names_ids
+            ),
+            content_type='text/plain'
         )
