@@ -1,5 +1,3 @@
-version: '1'
-
 volumes:
   pg_data:
   static:
