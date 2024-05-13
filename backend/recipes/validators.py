@@ -2,12 +2,13 @@ import re
 
 from django.conf import settings
 from django.core.exceptions import ValidationError
+from django_extensions.validators import HexValidator
 
 BAD_USERNAME = (
     'Неверный формат имени. '
     'Запрещенные символы: {characters}'
 )
-BAD_HEX_COLOR = 'Неверный формат hex color: {hex}. Error: {error}'
+BAD_HEX_COLOR = 'Неверный формат hex color: {hex}'
 
 
 def username_validator(username):
@@ -23,18 +24,13 @@ def username_validator(username):
     return username
 
 
-def hex_color_validator(hex_color):
-    try:
-        if (
-            not hex_color.startswith('#')
-            or len(hex_color.split('#')[1]) != settings.HEX_COLOR_LENGTH
-        ):
-            raise ValueError()
-        int(hex_color.split('#')[1], 16)
-        return hex_color
-    except ValueError as error:
-        raise ValidationError(
-            BAD_HEX_COLOR.format(
-                hex=hex_color, error=error
+class HexColorValidator(HexValidator):
+    def __call__(self, value):
+        hex_color = str(value)
+        if not hex_color.startswith('#'):
+            raise ValidationError(
+                BAD_HEX_COLOR.format(
+                    hex=hex_color
+                )
             )
-        )
+        super().__call__(hex_color.replace('#', ''))

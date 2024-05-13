@@ -83,7 +83,7 @@ class IngredientAdmin(admin.ModelAdmin):
 
     @admin.display(description='Рецептов связанных с продуктом')
     def ingredient_recipes_count(self, ingredient):
-        return ingredient.ingredient_recipes.count()
+        return ingredient.for_recipes.count()
 
 
 @admin.register(models.Recipe)
@@ -108,7 +108,7 @@ class RecipeAdmin(admin.ModelAdmin):
 
     @admin.display(description='Количество добавлений в избранное')
     def favorites(self, recipe):
-        return recipe.favorite.count()
+        return recipe.favorites.count()
 
     @admin.display(description='Изображение')
     def show_image(self, recipe):
@@ -156,9 +156,7 @@ class ShoppingCartAdmin(admin.ModelAdmin):
     list_display = (
         'user',
         'recipe',
-        'add_date'
     )
-    list_filter = ('add_date',)
     search_fields = ('user__username', 'recipe__name')
     empty_value_display = '-пусто-'
 
@@ -168,8 +166,6 @@ class SubscriptionsAdmin(admin.ModelAdmin):
     list_display = (
         'user',
         'author',
-        'subscribe_date'
     )
-    list_filter = ('subscribe_date',)
     search_fields = ('user__username', 'author__username')
     empty_value_display = '-пусто-'

@@ -5,7 +5,7 @@ from django.core.validators import MinValueValidator
 from django.db import models
 
 from . import constants
-from .validators import username_validator, hex_color_validator
+from .validators import username_validator, HexColorValidator
 
 
 class UserManager(BaseUserManager):
@@ -93,15 +93,11 @@ class Subscriptions(models.Model):
         related_name='authors',
         verbose_name='Подписан на автора'
     )
-    subscribe_date = models.DateField(
-        verbose_name='Дата подписки',
-        auto_now_add=True,
-    )
 
     class Meta:
         verbose_name = 'Подписки'
         verbose_name_plural = 'Подписки'
-        ordering = ('subscribe_date',)
+        ordering = ('user__username',)
         constraints = [
             models.UniqueConstraint(
                 fields=['user', 'author'],
@@ -123,7 +119,9 @@ class Tag(models.Model):
         verbose_name='Цвет',
         max_length=constants.COLOR_MAX_LENGTH,
         unique=True,
-        validators=[hex_color_validator, ]
+        validators=[HexColorValidator(
+            length=constants.HEX_LENGTH
+        ), ]
     )
     slug = models.SlugField(
         verbose_name='Слаг',
@@ -142,7 +140,7 @@ class Tag(models.Model):
 
 class Ingredient(models.Model):
     name = models.CharField(
-        verbose_name='Название ингредиента',
+        verbose_name='Название',
         max_length=constants.NAME_MAX_LENGTH,
     )
     measurement_unit = models.CharField(
@@ -227,7 +225,7 @@ class RecipeIngredientAmount(models.Model):
         to=Ingredient,
         verbose_name='Продукт',
         on_delete=models.CASCADE,
-        related_name='ingredient_recipes'
+        related_name='for_recipes'
     )
     amount = models.PositiveIntegerField(
         verbose_name='Количество',
@@ -266,6 +264,7 @@ class BaseUserRecipeModel(models.Model):
     class Meta:
         abstract = True
         default_related_name = '%(class)ss'
+        ordering = ('recipe__name',)
         constraints = [
             models.UniqueConstraint(
                 fields=['user', 'recipe'],
@@ -282,17 +281,10 @@ class Favorite(BaseUserRecipeModel):
     class Meta(BaseUserRecipeModel.Meta):
         verbose_name = 'Избранное'
         verbose_name_plural = 'Избранное'
-        ordering = ('user__username',)
 
 
 class ShoppingCart(BaseUserRecipeModel):
 
-    add_date = models.DateField(
-        auto_now_add=True,
-        verbose_name='Дата добавления'
-    )
-
     class Meta(BaseUserRecipeModel.Meta):
         verbose_name = 'Список покупок'
         verbose_name_plural = 'Список покупок'
-        ordering = ('add_date',)
