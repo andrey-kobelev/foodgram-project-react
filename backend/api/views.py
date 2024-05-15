@@ -80,11 +80,9 @@ class UsersViewSet(UserViewSet):
         permission_classes=(IsAuthenticated,),
     )
     def subscriptions(self, request):
-        subscriptions = tuple(
-            User.objects.filter(
-                subscribers__user=request.user
+        subscriptions = User.objects.filter(
+                authors__user=request.user
             )
-        )
         page = self.paginate_queryset(subscriptions)
         serializer = api_serializers.SubscriptionsSerializer(
             page, many=True, context={'request': request}
