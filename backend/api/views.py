@@ -202,5 +202,5 @@ class RecipeViewSet(viewsets.ModelViewSet):
                 ingredients=ingredients_amount,
                 recipes=recipes_names_ids
             ),
-            content_type='text/plain; charset=utf8'
+            content_type='text/plain; charset=utf-8'
         )
