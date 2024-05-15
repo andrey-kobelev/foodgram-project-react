@@ -144,13 +144,11 @@ class RecipeAdmin(admin.ModelAdmin):
                 amount=Sum('amount')
             ).order_by('ingredient'), 1
         ):
-            name = (
-                ingredient[
-                    "ingredient__name"
-                ].capitalize()[:constants.TRUNCATE_PRODUCT_NAME]
-            )
+            name = ingredient["ingredient__name"].capitalize()
             measurement_unit = ingredient["ingredient__measurement_unit"]
             amount = ingredient["amount"]
+            if len(name) >= 30:
+                name = f'{name[:constants.TRUNCATE_PRODUCT_NAME]}..'
             ingredients.append(
                 f'{num}. {name} ({measurement_unit}) {amount}'
             )
