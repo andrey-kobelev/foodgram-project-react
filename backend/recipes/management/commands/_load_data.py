@@ -8,15 +8,19 @@ from django.core.files.base import ContentFile
 
 from recipes.models import Ingredient, Tag, User, RecipeIngredientAmount
 
+
 INGREDIENTS_JSON_FILE_NAME = 'ingredients.json'
 TAGS_JSON_FILE_NAME = 'tags.json'
 IMAGE_CODE_FILE_NAME = 'image-code.txt'
+
 PATH_TO_INGREDIENTS_FILE = os.path.join(
     settings.DATA_ROOT, INGREDIENTS_JSON_FILE_NAME
 )
+
 PATH_TO_TAGS_FILE = os.path.join(
     settings.DATA_ROOT, TAGS_JSON_FILE_NAME
 )
+
 PATH_TO_IMAGE_CODE_FILE = os.path.join(
     settings.DATA_ROOT, IMAGE_CODE_FILE_NAME
 )

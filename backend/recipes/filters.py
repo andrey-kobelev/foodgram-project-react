@@ -1,6 +1,5 @@
-from django.conf import settings
 from django.contrib.admin import SimpleListFilter
-from django.db.models import Max
+from django.db.models import Max, Min, Q
 
 from . import models
 
@@ -8,7 +7,7 @@ from . import models
 SUBSCRIBING = 'with-subscribing'
 SUBSCRIBERS = 'with-subscribers'
 FAST_DISHES = 'Быстрые за {time} мин. ({recipes})'
-LONGTIME_DISHES = 'Долго, свыше {time} мин. ({recipes})'
+LONGTIME_DISHES = 'Долго, {time} мин. ({recipes})'
 
 
 class UserSubscriptionsListFilter(SimpleListFilter):
@@ -49,31 +48,37 @@ class RecipesCookingTimeListFilter(SimpleListFilter):
         recipes = (
             model_admin.get_queryset(request)
         )
+        mintime = recipes.aggregate(mintime=Min('cooking_time'))['mintime']
+        maxtime = recipes.aggregate(maxtime=Max('cooking_time'))['maxtime']
+        midtime = recipes.filter(
+            Q(cooking_time__gt=mintime)
+            & Q(cooking_time__lt=maxtime)
+        ).aggregate(midtime=Min('cooking_time'))['midtime']
         return (
             (
-                settings.FASTER,
+                mintime,
                 FAST_DISHES.format(
-                    time=settings.FASTER,
+                    time=mintime,
                     recipes=recipes.filter(
-                        cooking_time__lte=settings.FASTER
+                        cooking_time=mintime
                     ).count()
                 )
             ),
             (
-                settings.FAST,
+                midtime,
                 FAST_DISHES.format(
-                    time=settings.FAST,
+                    time=midtime,
                     recipes=recipes.filter(
-                        cooking_time__range=(settings.FASTER, settings.FAST)
+                        cooking_time=midtime
                     ).count()
                 )
             ),
             (
-                recipes.aggregate(maxtime=Max('cooking_time'))['maxtime'],
+                maxtime,
                 LONGTIME_DISHES.format(
-                    time=settings.FAST,
+                    time=maxtime,
                     recipes=recipes.filter(
-                        cooking_time__gt=settings.FAST
+                        cooking_time=maxtime
                     ).count()
                 )
             ),
@@ -81,18 +86,8 @@ class RecipesCookingTimeListFilter(SimpleListFilter):
         )
 
     def queryset(self, request, recipes):
-        if self.value():
-            value = int(self.value())
-            if value == settings.FASTER:
-                return recipes.filter(cooking_time__lte=settings.FASTER)
-            if settings.FASTER < value <= settings.FAST:
-                return recipes.filter(
-                    cooking_time__range=(settings.FASTER, settings.FAST)
-                )
-            return recipes.filter(
-                cooking_time__range=(
-                    settings.FAST,
-                    recipes
-                    .aggregate(maxtime=Max('cooking_time'))['maxtime'] + 1
-                )
-            )
+        if not self.value() or not self.value().isdigit():
+            return recipes
+        return recipes.filter(
+            cooking_time=int(self.value())
+        )

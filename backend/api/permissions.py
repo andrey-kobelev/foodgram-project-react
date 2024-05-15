@@ -17,4 +17,3 @@ class MePermission(permissions.BasePermission):
             request.method == 'GET'
             and request.user.is_authenticated
         )
-

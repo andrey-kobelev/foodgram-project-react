@@ -1,20 +1,13 @@
-from django.conf import settings
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
 from django.contrib.auth import get_user_model
+from django.db.models import Sum
 from django.utils.safestring import mark_safe
 from django.contrib.auth.models import Group
 
+from . import constants
 from . import models
-from . import utils
 from . import filters
-
-
-HTML_TAG_IMG = (
-    '<img src="{url}" '
-    'width="{width}" '
-    'height="{height}px" />'
-)
 
 
 User = get_user_model()
@@ -41,7 +34,7 @@ class UserAdmin(UserAdmin):
     search_fields = ('username', 'email',)
     empty_value_display = '-пусто-'
 
-    @admin.display(description='Количество рецептов')
+    @admin.display(description='Рецепты')
     def recipes(self, user):
         return user.recipes.count()
 
@@ -63,11 +56,19 @@ class RecipeIngredientAmountInLine(admin.TabularInline):
 class TagAdmin(admin.ModelAdmin):
     list_display = (
         'name',
-        'color',
+        'display_color',
         'slug'
     )
     search_fields = ('name', 'slug', 'color')
     empty_value_display = '-пусто-'
+
+    @admin.display(description='Цвет')
+    def display_color(self, tag):
+        return mark_safe(
+            '<span style="color: {color};">{color}</span>'.format(
+                color=tag.color
+            )
+        )
 
 
 @admin.register(models.Ingredient)
@@ -81,7 +82,7 @@ class IngredientAdmin(admin.ModelAdmin):
     list_filter = ('measurement_unit',)
     empty_value_display = '-пусто-'
 
-    @admin.display(description='Рецептов связанных с продуктом')
+    @admin.display(description='Рецепты')
     def ingredient_recipes_count(self, ingredient):
         return ingredient.for_recipes.count()
 
@@ -106,39 +107,54 @@ class RecipeAdmin(admin.ModelAdmin):
     filter_horizontal = ('tags',)
     empty_value_display = '-пусто-'
 
-    @admin.display(description='Количество добавлений в избранное')
+    @admin.display(description='В избранном')
     def favorites(self, recipe):
         return recipe.favorites.count()
 
     @admin.display(description='Изображение')
     def show_image(self, recipe):
         return mark_safe(
-            HTML_TAG_IMG.format(
+            '<img src="{url}" '
+            'width="{width}" '
+            'height="{height}px" />'.format(
                 url=recipe.image.url,
-                width=settings.ADMIN_IMAGE_WIDTH,
-                height=settings.ADMIN_IMAGE_HEIGHT
+                width=constants.ADMIN_IMAGE_WIDTH,
+                height=constants.ADMIN_IMAGE_HEIGHT
             )
         )
 
     @admin.display(description='Теги')
     def get_tags(self, recipe):
         return mark_safe(
-            '{tags}'.format(
-                tags='<br>'.join(
-                    recipe.tags.values_list('name', flat=True)
-                )
+            '<br>'.join(
+                recipe.tags.values_list('name', flat=True)
             )
         )
 
     @admin.display(description='Ингредиенты')
     def get_ingredients(self, recipe):
-        return mark_safe(
-            '{ingredients}'.format(
-                ingredients='<br>'.join(
-                    utils.get_ingredients_amount(recipes_ids=[recipe.id, ])
-                )
+        ingredients = []
+        for num, ingredient in enumerate(
+            models.RecipeIngredientAmount.objects.filter(
+                recipe=recipe
+            ).values(
+                'ingredient__name',
+                'ingredient__measurement_unit'
+            ).annotate(
+                amount=Sum('amount')
+            ).order_by('ingredient'), 1
+        ):
+            name = (
+                ingredient[
+                    "ingredient__name"
+                ].capitalize()[:constants.TRUNCATE_PRODUCT_NAME]
             )
-        )
+            measurement_unit = ingredient["ingredient__measurement_unit"]
+            amount = ingredient["amount"]
+            ingredients.append(
+                f'{num}. {name} ({measurement_unit}) {amount}'
+            )
+        return mark_safe('<br>'.join(ingredients))
 
 
 @admin.register(models.Favorite)
