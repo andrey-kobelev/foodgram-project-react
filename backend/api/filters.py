@@ -5,9 +5,6 @@ from django.db.models import Q
 from recipes.models import Recipe, Tag
 
 
-IS_FAVORITED = 'is_favorited'
-
-
 class IngredientsSearchFilter(SearchFilter):
     search_param = 'name'
 
@@ -34,6 +31,6 @@ class RecipesFilter(filters.FilterSet):
             return recipes.objects.none()
         user = self.request.user
         related_filter = Q(shoppingcarts__user=user)
-        if name == IS_FAVORITED:
+        if name == 'is_favorited':
             related_filter = Q(favorites__user=user)
         return recipes.filter(related_filter)

@@ -1,5 +1,4 @@
 from django.contrib.admin import SimpleListFilter
-from django.db.models import Max, Min, Q
 
 from . import models
 
@@ -45,49 +44,62 @@ class RecipesCookingTimeListFilter(SimpleListFilter):
     parameter_name = 'cooking-time'
 
     def lookups(self, request, model_admin):
-        recipes = (
-            model_admin.get_queryset(request)
-        )
-        mintime = recipes.aggregate(mintime=Min('cooking_time'))['mintime']
-        maxtime = recipes.aggregate(maxtime=Max('cooking_time'))['maxtime']
-        midtime = recipes.filter(
-            Q(cooking_time__gt=mintime)
-            & Q(cooking_time__lt=maxtime)
-        ).aggregate(midtime=Min('cooking_time'))['midtime']
-        return (
-            (
-                mintime,
-                FAST_DISHES.format(
-                    time=mintime,
-                    recipes=recipes.filter(
-                        cooking_time=mintime
-                    ).count()
-                )
-            ),
-            (
-                midtime,
-                FAST_DISHES.format(
-                    time=midtime,
-                    recipes=recipes.filter(
-                        cooking_time=midtime
-                    ).count()
-                )
-            ),
-            (
-                maxtime,
-                LONGTIME_DISHES.format(
-                    time=maxtime,
-                    recipes=recipes.filter(
-                        cooking_time=maxtime
-                    ).count()
-                )
-            ),
+        try:
+            recipes = (model_admin.get_queryset(request))
+            times = recipes.values_list('cooking_time', flat=True)
+            if len(times) < 3:
+                return None
+            midtimes = [
+                time
+                for time in times
+                if min(times) < time < max(times)
+            ]
+            mintimes = [
+                time
+                for time in times
+                if time < min(midtimes)
+            ]
+            maxtimes = [
+                time
+                for time in times
+                if time > max(midtimes)
+            ]
+            return (
+                (
+                    ','.join(map(str, mintimes)),
+                    FAST_DISHES.format(
+                        time=max(mintimes),
+                        recipes=recipes.filter(
+                            cooking_time__in=mintimes
+                        ).count()
+                    )
+                ),
+                (
+                    ','.join(map(str, midtimes)),
+                    FAST_DISHES.format(
+                        time=max(midtimes),
+                        recipes=recipes.filter(
+                            cooking_time__in=midtimes
+                        ).count()
+                    )
+                ),
+                (
+                    ','.join(map(str, maxtimes)),
+                    LONGTIME_DISHES.format(
+                        time=max(maxtimes),
+                        recipes=recipes.filter(
+                            cooking_time__in=maxtimes
+                        ).count()
+                    )
+                ),
 
-        )
+            )
+        except ValueError:
+            return None
 
     def queryset(self, request, recipes):
-        if not self.value() or not self.value().isdigit():
+        if not self.value():
             return recipes
         return recipes.filter(
-            cooking_time=int(self.value())
+            cooking_time__in=self.value().split(',')
         )

@@ -78,7 +78,7 @@ class Subscriptions(models.Model):
 
 class Tag(models.Model):
     name = models.CharField(
-        verbose_name='Имя тега',
+        verbose_name='Имя',
         max_length=constants.NAME_MAX_LENGTH,
         unique=True
     )
@@ -144,7 +144,7 @@ class Recipe(models.Model):
         verbose_name='Текст'
     )
     image = models.ImageField(
-        upload_to=constants.RECIPE_IMAGE_UPLOAD_TO,
+        upload_to='recipes/images/',
         verbose_name='Изображение'
     )
     tags = models.ManyToManyField(
@@ -170,7 +170,7 @@ class Recipe(models.Model):
         verbose_name = 'Рецепт'
         verbose_name_plural = 'Рецепты'
         default_related_name = 'recipes'
-        ordering = ('pub_date',)
+        ordering = ('-pub_date',)
         constraints = [
             models.UniqueConstraint(
                 fields=['name', 'author'],
@@ -186,26 +186,23 @@ class RecipeIngredientAmount(models.Model):
     recipe = models.ForeignKey(
         to=Recipe,
         on_delete=models.CASCADE,
-        related_name='recipe_ingredients'
     )
     ingredient = models.ForeignKey(
         to=Ingredient,
         verbose_name='Продукт',
         on_delete=models.CASCADE,
-        related_name='for_recipes'
     )
     amount = models.PositiveIntegerField(
         verbose_name='Количество',
         validators=[
             MinValueValidator(constants.MIN_AMOUNT_VALUE),
-        ],
-        blank=True,
-        null=True
+        ]
     )
 
     class Meta:
         verbose_name = 'Ингредиент и количество'
         verbose_name_plural = 'Ингредиенты и количество'
+        default_related_name = 'recipe_ingredients'
         ordering = ('recipe', 'ingredient', 'amount')
 
     def __str__(self):

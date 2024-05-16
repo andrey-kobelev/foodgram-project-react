@@ -38,11 +38,11 @@ class UserAdmin(UserAdmin):
     def recipes(self, user):
         return user.recipes.count()
 
-    @admin.display(description='Количество подписок')
+    @admin.display(description='Подписок')
     def subscriptions(self, user):
         return user.subscribers.count()
 
-    @admin.display(description='Количество подписчиков')
+    @admin.display(description='Подписчиков')
     def subscribers(self, user):
         return user.authors.count()
 
@@ -65,9 +65,8 @@ class TagAdmin(admin.ModelAdmin):
     @admin.display(description='Цвет')
     def display_color(self, tag):
         return mark_safe(
-            '<span style="color: {color};">{color}</span>'.format(
-                color=tag.color
-            )
+            f'<span style="color: '
+            f'{tag.color};">{tag.color}</span>'
         )
 
 
@@ -76,15 +75,15 @@ class IngredientAdmin(admin.ModelAdmin):
     list_display = (
         'name',
         'measurement_unit',
-        'ingredient_recipes_count'
+        'recipes_count'
     )
     search_fields = ('name', 'measurement_unit')
     list_filter = ('measurement_unit',)
     empty_value_display = '-пусто-'
 
     @admin.display(description='Рецепты')
-    def ingredient_recipes_count(self, ingredient):
-        return ingredient.for_recipes.count()
+    def recipes_count(self, ingredient):
+        return ingredient.recipe_ingredients.count()
 
 
 @admin.register(models.Recipe)
@@ -114,13 +113,9 @@ class RecipeAdmin(admin.ModelAdmin):
     @admin.display(description='Изображение')
     def show_image(self, recipe):
         return mark_safe(
-            '<img src="{url}" '
-            'width="{width}" '
-            'height="{height}px" />'.format(
-                url=recipe.image.url,
-                width=constants.ADMIN_IMAGE_WIDTH,
-                height=constants.ADMIN_IMAGE_HEIGHT
-            )
+            f'<img src="{recipe.image.url}" '
+            f'width="{constants.ADMIN_IMAGE_WIDTH}" '
+            f'height="{constants.ADMIN_IMAGE_HEIGHT}px" />'
         )
 
     @admin.display(description='Теги')
@@ -133,26 +128,14 @@ class RecipeAdmin(admin.ModelAdmin):
 
     @admin.display(description='Ингредиенты')
     def get_ingredients(self, recipe):
-        ingredients = []
-        for num, ingredient in enumerate(
-            models.RecipeIngredientAmount.objects.filter(
-                recipe=recipe
-            ).values(
-                'ingredient__name',
-                'ingredient__measurement_unit'
-            ).annotate(
-                amount=Sum('amount')
-            ).order_by('ingredient'), 1
-        ):
-            name = ingredient["ingredient__name"].capitalize()
-            measurement_unit = ingredient["ingredient__measurement_unit"]
-            amount = ingredient["amount"]
-            if len(name) >= 30:
-                name = f'{name[:constants.TRUNCATE_PRODUCT_NAME]}..'
-            ingredients.append(
-                f'{num}. {name} ({measurement_unit}) {amount}'
+        return mark_safe(
+            '<br>'.join(
+                f'- {name[:constants.TRUNCATE_PRODUCT_NAME]}'
+                for name in recipe.ingredients.values_list(
+                    'name', flat=True
+                )
             )
-        return mark_safe('<br>'.join(ingredients))
+        )
 
 
 @admin.register(models.Favorite)

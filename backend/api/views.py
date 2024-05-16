@@ -16,7 +16,7 @@ from rest_framework.response import Response
 from . import serializers as api_serializers
 from .filters import IngredientsSearchFilter, RecipesFilter
 from .paginators import LimitPageQueryParamsPaginator
-from .permissions import AuthorSafeMethods, MePermission
+from .permissions import AuthorSafeMethods
 from recipes import models as recipes_models
 from recipes import utils
 
@@ -30,11 +30,6 @@ User = get_user_model()
 class UsersViewSet(UserViewSet):
     queryset = User.objects.all()
     pagination_class = LimitPageQueryParamsPaginator
-
-    def get_permissions(self):
-        if self.action == 'me':
-            return (MePermission(),)
-        return super().get_permissions()
 
     @action(
         methods=['POST', 'DELETE'],
