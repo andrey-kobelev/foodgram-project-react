@@ -134,7 +134,10 @@ def create_ingredients_tags(recipe):
     )
     num_ingredients = random.randint(5, 15)
     for ingredient in get_ingredients(
-        *[random.randint(1, Ingredient.objects.count()) for _ in range(num_ingredients)]
+        *[
+            random.randint(1, Ingredient.objects.count())
+            for _ in range(num_ingredients)
+        ]
     ):
         RecipeIngredientAmount.objects.create(
             recipe=recipe,
