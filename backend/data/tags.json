@@ -16,5 +16,11 @@
         "color": "#fc0f1f",
         "slug": "dinner",
         "id": 22
+    },
+    {
+        "name": "Перекус",
+        "color": "#00FF74",
+        "slug": "snack",
+        "id": 23
     }
 ]

@@ -1,7 +1,6 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
 from django.contrib.auth import get_user_model
-from django.db.models import Sum
 from django.utils.safestring import mark_safe
 from django.contrib.auth.models import Group
 
@@ -56,6 +55,7 @@ class RecipeIngredientAmountInLine(admin.TabularInline):
 class TagAdmin(admin.ModelAdmin):
     list_display = (
         'name',
+        'color',
         'display_color',
         'slug'
     )
@@ -65,8 +65,9 @@ class TagAdmin(admin.ModelAdmin):
     @admin.display(description='Цвет')
     def display_color(self, tag):
         return mark_safe(
-            f'<span style="color: '
-            f'{tag.color};">{tag.color}</span>'
+            f'<div style="width: {constants.ADMIN_COLOR_WIDTH}px; '
+            f'height:{constants.ADMIN_COLOR_HEIGHT}px; '
+            f'background-color:{tag.color};"></div>'
         )
 
 

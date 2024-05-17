@@ -6,13 +6,13 @@ volumes:
 services:
   db:
     image: postgres:13
-    env_file: .env
+    env_file: ./.env
     container_name: foodgram_db
     volumes:
       - pg_data:/var/lib/postgresql/data
   backend:
     image: andreykobe/foodgram_backend
-    env_file: .env
+    env_file: ./.env
     depends_on:
       - db
     volumes:
@@ -20,13 +20,13 @@ services:
       - static:/backend_static
   frontend:
     image: andreykobe/foodgram_frontend
-    env_file: .env
+    env_file: ./.env
     command: cp -r /app/build/. /frontend_static/
     volumes:
       - static:/frontend_static
   gateway:
     image: andreykobe/foodgram_gateway
-    env_file: .env
+    env_file: ./.env
     ports:
       - 9080:80
     volumes:

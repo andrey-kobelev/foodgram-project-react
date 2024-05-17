@@ -1,10 +1,10 @@
 from django.conf import settings
 from django.contrib.auth.models import AbstractUser
-from django.core.validators import MinValueValidator
+from django.core.validators import MinValueValidator, RegexValidator
 from django.db import models
 
 from . import constants
-from .validators import username_validator, HexColorValidator
+from .validators import username_validator
 
 
 class User(AbstractUser):
@@ -83,12 +83,16 @@ class Tag(models.Model):
         unique=True
     )
     color = models.CharField(
-        verbose_name='Цвет',
+        verbose_name='Цвет (hex)',
         max_length=constants.COLOR_MAX_LENGTH,
         unique=True,
-        validators=[HexColorValidator(
-            length=constants.HEX_LENGTH
-        ), ]
+        validators=[
+            RegexValidator(
+                regex=constants.HEX_COLOR_PATTERN,
+                message=constants.HEX_COLOR_ERROR_MESSAGE,
+                code='invalid_hex_color'
+            ),
+        ]
     )
     slug = models.SlugField(
         verbose_name='Слаг',

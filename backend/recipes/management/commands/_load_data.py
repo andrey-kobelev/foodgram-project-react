@@ -28,10 +28,15 @@ PATH_TO_IMAGE_CODE_FILE = os.path.join(
 USER_ID_ONE = 20
 USER_ID_TWO = 21
 SUPERUSER_ID = 22
+REVIEW_ID = 23
 
 BURGER_RECIPE_ID = 20
 SANDWICH_RECIPE_ID = 21
 KEBAB_RECIPE_ID = 22
+PIZZA_RECIPE_ID = 23
+SHAKSHUKA_RECIPE_ID = 24
+PASTA_RECIPE_ID = 25
+PELMENI_RECIPE_ID = 26
 
 
 def load_data(path_to):
@@ -59,17 +64,17 @@ TAGS_IDS = [
 
 USERS = [
     {
-        'username': 'bestuser1',
-        'first_name': 'Best',
-        'last_name': 'User',
+        'username': 'bestuser',
+        'first_name': 'User',
+        'last_name': 'One',
         'email': 'bestuser@yandex.ru',
         'password': 'qwerty123',
         'id': USER_ID_ONE
     },
     {
         'username': 'bestuser2',
-        'first_name': 'Besttwo',
-        'last_name': 'Usertwo',
+        'first_name': 'User',
+        'last_name': 'Two',
         'email': 'bestuser2@yandex.ru',
         'password': 'qwerty123',
         'id': USER_ID_TWO
@@ -84,6 +89,17 @@ USERS = [
         'is_superuser': True,
         'is_staff': True
     },
+    {
+        'username': 'review',
+        'first_name': 'Review',
+        'last_name': 'Admin',
+        'email': 'review@admin.ru',
+        'password': 'review1admin',
+        'id': REVIEW_ID,
+        'is_superuser': True,
+        'is_staff': True
+    },
+
 ]
 
 
@@ -116,9 +132,9 @@ def create_ingredients_tags(recipe):
             *random.choices(TAGS_IDS, k=k_tags)
         )
     )
-    num_ingredients = random.randint(3, 10)
+    num_ingredients = random.randint(5, 15)
     for ingredient in get_ingredients(
-        *[random.randint(1, 100) for _ in range(num_ingredients)]
+        *[random.randint(1, Ingredient.objects.count()) for _ in range(num_ingredients)]
     ):
         RecipeIngredientAmount.objects.create(
             recipe=recipe,
@@ -152,7 +168,38 @@ RECIPES = [
         'id': KEBAB_RECIPE_ID,
         'cooking_time': 45
     },
-
+    {
+        'name': 'Pasta',
+        'author': REVIEW_ID,
+        'text': 'The best Pasta',
+        'image': get_image(),
+        'id': PASTA_RECIPE_ID,
+        'cooking_time': 15
+    },
+    {
+        'name': 'Pelmeni',
+        'author': REVIEW_ID,
+        'text': 'The best Pelmeni',
+        'image': get_image(),
+        'id': PELMENI_RECIPE_ID,
+        'cooking_time': 24
+    },
+    {
+        'name': 'Pizza',
+        'author': REVIEW_ID,
+        'text': 'The best Pizza',
+        'image': get_image(),
+        'id': PIZZA_RECIPE_ID,
+        'cooking_time': 60
+    },
+    {
+        'name': 'Shakshuka',
+        'author': REVIEW_ID,
+        'text': 'The best Shakshuka',
+        'image': get_image(),
+        'id': SHAKSHUKA_RECIPE_ID,
+        'cooking_time': 36
+    }
 ]
 
 

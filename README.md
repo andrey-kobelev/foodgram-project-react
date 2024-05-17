@@ -13,7 +13,7 @@
 Пользователям сайта также будет доступен сервис «Список покупок». Он позволит создавать список продуктов, которые нужно купить для приготовления выбранных блюд.
   
 
-## Как запустить проект:  
+## Как запустить проект на удаленном сервере:  
 ##### Настраиваем Docker
 
 ```bash
@@ -49,8 +49,7 @@ sudo docker compose -f docker-compose.production.yml exec backend cp -r /app/col
 # После того как миграции пройдут успешно, импортируйте данные в БД введя команды (import-recipes в самом конце!!!):
 	# ..manage.py import-ingredients
 	# ..manage.py import-tags
-	# ..manage.py import-users
-	# ..manage.py import-recipes		
+
 sudo docker compose -f docker-compose.production.yml exec backend python manage.py import-ingredients
 # После успешного наполнения БД данными вы увидете примерно такое сообщение:
 
@@ -117,15 +116,83 @@ sudo certbot --nginx
 # Перезапускаем NGINX  
 sudo systemctl reload nginx  
 ```  
+
+## Как запустить проект локально
+
+### Файл `docker-compose.yml`
+Что бы запустить проект локально, ваш `docker-compose.yml` файл должен выглядеть так:
+
+```yaml
+volumes:  
+  pg_data:  
+  static:  
+  media:  
   
----  
-## Попробовать демо-версию:  
-* [Foodgram](http://51.250.97.96/)  
+services:  
+  db:  
+    image: postgres:13  
+    env_file: ./.env  
+    container_name: foodgram_db  
+    volumes:  
+      - pg_data:/var/lib/postgresql/data  
+  backend:  
+    build: ./backend/  
+    env_file: ./.env  
+    depends_on:  
+      - db  
+    volumes:  
+      - media:/app/media  
+      - static:/backend_static  
+  frontend:  
+    build: ./frontend/
+    env_file: ./.env  
+    command: cp -r /app/build/. /frontend_static/  
+    volumes:  
+      - static:/frontend_static  
+  gateway:  
+    build: ./infra/
+    env_file: ./.env  
+    ports:  
+      - 8000:80  
+    volumes:  
+      - static:/staticfiles  
+      - media:/media
+```
 
-##### Данные администратора для входа в админку
-- **Login**: superuser
-- **Password**: superuser123
+Проверьте файл `.env`, убедитесь что там есть все необходимые переменные
 
+```bash
+POSTGRES_USER=<user>  
+POSTGRES_PASSWORD=<password>  
+POSTGRES_DB=<db-name>  
+DB_HOST=<db_container_name>  
+DB_PORT=<port>  
+SECRET_KEY=<django_key>  
+ALLOWED_HOSTS=<localhost_ip>,<localhost>
+DEBUG_VALUE=<True or False>
+
+# Для локального запуска контейнеров,
+# установите False
+SQLITE=<True or False>
+```
+
+Далее выполните последовательно команды находясь в директории проекта:
+
+```bash
+sudo docker compose -f docker-compose.yml up -d
+sudo docker compose -f docker-compose.yml exec backend python manage.py makemigrations
+sudo docker compose -f docker-compose.yml exec backend python manage.py migrate  
+sudo docker compose -f docker-compose.yml exec backend python manage.py collectstatic  
+sudo docker compose -f docker-compose.yml exec backend cp -r /app/collect_static/. /static_backend/static/
+```
+
+Что-бы остановить работу контейнеров:
+
+```bash
+sudo docker compose -f docker-compose.yml down
+```
+
+--- 
 
 ## В проекте были использованы технологии:  
 * #### [Django REST](https://www.django-rest-framework.org/)  
