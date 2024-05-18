@@ -22,9 +22,13 @@ class BaseUsersSerializer(UserSerializer):
 
     class Meta(UserSerializer.Meta):
         model = User
-        fields = (
-            *UserSerializer.Meta.fields,
-            'is_subscribed'
+        fields = tuple(
+            field
+            for field in (
+                *UserSerializer.Meta.fields,
+                'is_subscribed'
+            )
+            if field != 'password'
         )
         read_only_fields = (
             *UserSerializer.Meta.read_only_fields,

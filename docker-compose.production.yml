@@ -27,6 +27,9 @@ services:
   gateway:
     image: andreykobe/foodgram_gateway
     env_file: ./.env
+    depends_on:
+      - db
+      - backend
     ports:
       - 9080:80
     volumes:

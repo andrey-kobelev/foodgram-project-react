@@ -13,7 +13,7 @@ ADMIN_COLOR_HEIGHT = 25
 
 TRUNCATE_PRODUCT_NAME = 20
 
-HEX_COLOR_PATTERN = '^#(?:[0-9a-fA-F]{3}){1,2}$'
+HEX_COLOR_PATTERN = '^#{1}[A-Fa-f0-9]{6}$'
 HEX_COLOR_ERROR_MESSAGE = (
     'Введите hex color в таком формате #00FF74'
 )

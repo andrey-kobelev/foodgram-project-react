@@ -5,7 +5,7 @@ from django_filters.rest_framework import DjangoFilterBackend
 from djoser.views import UserViewSet
 from rest_framework import status, viewsets
 from rest_framework.decorators import action
-from rest_framework.exceptions import ValidationError
+from rest_framework.exceptions import ValidationError, PermissionDenied
 from rest_framework.permissions import (
     AllowAny,
     IsAuthenticated,
@@ -30,6 +30,13 @@ User = get_user_model()
 class UsersViewSet(UserViewSet):
     queryset = User.objects.all()
     pagination_class = LimitPageQueryParamsPaginator
+
+    def get_permissions(self):
+        if self.action == 'me':
+            if self.request.method != 'GET':
+                raise PermissionDenied()
+            return (IsAuthenticated(),)
+        return super().get_permissions()
 
     @action(
         methods=['POST', 'DELETE'],

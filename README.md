@@ -117,80 +117,50 @@ sudo certbot --nginx
 sudo systemctl reload nginx  
 ```  
 
-## Как запустить проект локально
+## Как развернуть проект локально
 
-### Файл `docker-compose.yml`
-Что бы запустить проект локально, ваш `docker-compose.yml` файл должен выглядеть так:
-
-```yaml
-volumes:  
-  pg_data:  
-  static:  
-  media:  
+Клонировать репозиторий и перейти в него в командной строке:  
   
-services:  
-  db:  
-    image: postgres:13  
-    env_file: ./.env  
-    container_name: foodgram_db  
-    volumes:  
-      - pg_data:/var/lib/postgresql/data  
-  backend:  
-    build: ./backend/  
-    env_file: ./.env  
-    depends_on:  
-      - db  
-    volumes:  
-      - media:/app/media  
-      - static:/backend_static  
-  frontend:  
-    build: ./frontend/
-    env_file: ./.env  
-    command: cp -r /app/build/. /frontend_static/  
-    volumes:  
-      - static:/frontend_static  
-  gateway:  
-    build: ./infra/
-    env_file: ./.env  
-    ports:  
-      - 8000:80  
-    volumes:  
-      - static:/staticfiles  
-      - media:/media
-```
+```  
+git clone https://github.com/andrey-kobelev/foodgram-project-react.git
+```  
+  
+```  
+cd foodgram-project-react  
+```  
+  
+Cоздать и активировать виртуальное окружение:  
+  
+```  
+python3 -m venv env  
+```  
+  
+```  
+source env/bin/activate  
+```  
+  
+Установить зависимости из файла requirements.txt:  
+  
+```  
+python3 -m pip install --upgrade pip  
+```  
+  
+```  
+pip install -r requirements.txt  
+```  
+  
+Выполнить миграции:  
+  
+```  
+python3 manage.py migrate  
+```  
+  
+Запустить проект:  
+  
+```  
+python3 manage.py runserver  
+```  
 
-Проверьте файл `.env`, убедитесь что там есть все необходимые переменные
-
-```bash
-POSTGRES_USER=<user>  
-POSTGRES_PASSWORD=<password>  
-POSTGRES_DB=<db-name>  
-DB_HOST=<db_container_name>  
-DB_PORT=<port>  
-SECRET_KEY=<django_key>  
-ALLOWED_HOSTS=<localhost_ip>,<localhost>
-DEBUG_VALUE=<True or False>
-
-# Для локального запуска контейнеров,
-# установите False
-SQLITE=<True or False>
-```
-
-Далее выполните последовательно команды находясь в директории проекта:
-
-```bash
-sudo docker compose -f docker-compose.yml up -d
-sudo docker compose -f docker-compose.yml exec backend python manage.py makemigrations
-sudo docker compose -f docker-compose.yml exec backend python manage.py migrate  
-sudo docker compose -f docker-compose.yml exec backend python manage.py collectstatic  
-sudo docker compose -f docker-compose.yml exec backend cp -r /app/collect_static/. /static_backend/static/
-```
-
-Что-бы остановить работу контейнеров:
-
-```bash
-sudo docker compose -f docker-compose.yml down
-```
 
 --- 
 

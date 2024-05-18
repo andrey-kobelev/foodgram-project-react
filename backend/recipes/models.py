@@ -90,7 +90,6 @@ class Tag(models.Model):
             RegexValidator(
                 regex=constants.HEX_COLOR_PATTERN,
                 message=constants.HEX_COLOR_ERROR_MESSAGE,
-                code='invalid_hex_color'
             ),
         ]
     )

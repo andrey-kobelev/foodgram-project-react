@@ -30,8 +30,8 @@ def get_ingredients_amount(recipes_ids: list) -> list:
     return [
         f'{num}. '
         f'{ingredient["ingredient__name"].capitalize()} '
+        f'({ingredient["ingredient__measurement_unit"]}) '
         f'{ingredient["amount"]} '
-        f'{ingredient["ingredient__measurement_unit"]}'
         for num, ingredient in enumerate(
             (
                 RecipeIngredientAmount.objects.filter(

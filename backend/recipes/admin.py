@@ -131,9 +131,24 @@ class RecipeAdmin(admin.ModelAdmin):
     def get_ingredients(self, recipe):
         return mark_safe(
             '<br>'.join(
-                f'- {name[:constants.TRUNCATE_PRODUCT_NAME]}'
-                for name in recipe.ingredients.values_list(
-                    'name', flat=True
+                '- {name} '
+                '({measurement_unit}) '
+                '{amount}'.format(
+                    name=(
+                        ingredient.ingredient.name
+                        [:constants.TRUNCATE_PRODUCT_NAME]
+                    ),
+                    measurement_unit=(
+                        ingredient.ingredient.measurement_unit
+                    ),
+                    amount=(
+                        ingredient.amount
+                    )
+                )
+                for ingredient in (
+                    recipe.recipe_ingredients.select_related(
+                        'ingredient'
+                    )
                 )
             )
         )
