@@ -164,7 +164,7 @@ class Recipe(models.Model):
         validators=[MinValueValidator(constants.MIN_MINUTE_VALUE), ],
         verbose_name='Время приготовления'
     )
-    pub_date = models.DateField(
+    pub_date = models.DateTimeField(
         verbose_name='Дата публикации',
         auto_now_add=True,
     )
