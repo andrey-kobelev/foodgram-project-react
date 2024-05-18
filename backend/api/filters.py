@@ -24,7 +24,10 @@ class RecipesFilter(filters.FilterSet):
 
     class Meta:
         model = Recipe
-        fields = ('tags', 'author')
+        fields = (
+            'tags',
+            'author'
+        )
 
     def get_recipes(self, recipes, name, value):
         if self.request.auth is None or not value:
