@@ -112,6 +112,7 @@ class IngredientsViewSet(viewsets.ReadOnlyModelViewSet):
 class RecipeViewSet(viewsets.ModelViewSet):
     queryset = recipes_models.Recipe.objects.all()
     serializer_class = api_serializers.RecipeSerializer
+    ordering = ('-pub_date',)
     permission_classes = (
         IsAuthenticatedOrReadOnly,
         AuthorSafeMethods
