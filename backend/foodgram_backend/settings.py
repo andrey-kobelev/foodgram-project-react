@@ -43,7 +43,7 @@ ROOT_URLCONF = 'foodgram_backend.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
+        'DIRS': ['docs',],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -106,9 +106,14 @@ USE_L10N = True
 
 USE_TZ = True
 
+STATICFILES_DIRS = [
+    BASE_DIR / 'static',
+]
+
 STATIC_URL = '/static/'
 STATIC_ROOT = BASE_DIR / 'collected_static'
 DATA_ROOT = BASE_DIR / 'data'
+DOCS_ROOT = BASE_DIR / 'docs'
 
 MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')

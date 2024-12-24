@@ -1,6 +1,9 @@
+import os
+
+from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.http import FileResponse
-from django.shortcuts import get_object_or_404
+from django.shortcuts import get_object_or_404, render
 from django_filters.rest_framework import DjangoFilterBackend
 from djoser.views import UserViewSet
 from rest_framework import status, viewsets
@@ -207,3 +210,8 @@ class RecipeViewSet(viewsets.ModelViewSet):
             ),
             content_type='text/plain; charset=utf-8'
         )
+
+
+def redoc(request):
+    template_name = 'redoc.html'
+    return render(request=request, template_name=template_name)

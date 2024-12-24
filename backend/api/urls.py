@@ -2,7 +2,7 @@ from django.urls import include, path
 from rest_framework.routers import DefaultRouter
 
 from .views import (IngredientsViewSet, RecipeViewSet, TagsViewSet,
-                    UsersViewSet)
+                    UsersViewSet, redoc)
 
 router = DefaultRouter()
 
@@ -29,5 +29,6 @@ router.register(
 
 urlpatterns = [
     path('auth/', include('djoser.urls.authtoken')),
+    path('redoc/', redoc, name='redoc'),
     path('', include(router.urls)),
 ]
