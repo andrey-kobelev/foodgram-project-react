@@ -1,6 +1,3 @@
-import os
-
-from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.http import FileResponse
 from django.shortcuts import get_object_or_404, render
