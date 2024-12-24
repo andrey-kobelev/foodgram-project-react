@@ -119,50 +119,62 @@ sudo systemctl reload nginx
 
 ## Как развернуть проект локально
 
-Клонировать репозиторий и перейти в него в командной строке:  
-  
+Клонировать репозиторий и перейти в него в командной строке:    
+    
 ```  
-git clone https://github.com/andrey-kobelev/foodgram-project-react.git
+git clone https://github.com/andrey-kobelev/foodgram-project-react.git  
+```    
+    
 ```  
-  
+cd foodgram-project-react 
+```    
+    
+Cоздать и активировать виртуальное окружение:    
+    
 ```  
-cd foodgram-project-react  
+python3 -m venv venv  
+```    
+    
 ```  
-  
-Cоздать и активировать виртуальное окружение:  
-  
-```  
-python3 -m venv env  
-```  
-  
-```  
-source env/bin/activate  
-```  
-  
-Установить зависимости из файла requirements.txt:  
-  
+source venv/bin/activate  
+```    
+    
+Установить зависимости из файла requirements.txt:    
+    
 ```  
 python3 -m pip install --upgrade pip  
+```    
+    
 ```  
-  
+pip install -r requirements
+```    
+    
+Выполнить миграции:    
+
 ```  
-pip install -r requirements.txt  
+cd backend
+``` 
+    
 ```  
-  
-Выполнить миграции:  
-  
+python3 manage.py migrate 
 ```  
-python3 manage.py migrate  
-```  
-  
-Запустить проект:  
-  
+
+Импортировать в БД данные для работы приложения. Выполняйте команды поочередно (import-recipes в самом конце!!!):
+
+```
+python3 manage.py import-ingredients
+python3 manage.py import-tags
+python3 manage.py import-users
+python3 manage.py import-recipes
+```
+    
+Запустить проект:    
+    
 ```  
 python3 manage.py runserver  
-```  
+```    
 
-
---- 
+После запуска будет доступен интерфейс для тестирования API по ссылке: http://127.0.0.1:8000/api/
 
 ## В проекте были использованы технологии:  
 * #### [Django REST](https://www.django-rest-framework.org/)  
