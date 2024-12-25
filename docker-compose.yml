@@ -1,0 +1,30 @@
+version: '3'
+
+volumes:
+  static:
+  media:
+
+services:
+  backend:
+    build: ./backend/
+    container_name: backend
+    env_file: .env
+    volumes:
+      - media:/app/media
+      - static:/backend_static
+  frontend:
+    build: ./frontend/
+    env_file: .env
+    command: cp -r /app/build/. /static/
+    volumes:
+      - static:/static
+  gateway:
+    build: ./gateway/
+    env_file: .env
+    depends_on:
+      - backend
+    ports:
+      - 8000:80
+    volumes:
+      - static:/staticfiles
+      - media:/media
